@@ -5,6 +5,9 @@
 
    @author Christian D&ouml;nges <cd@platypus-projects.de>
 
+   @note The master repository for this file is at
+    <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
+
     LICENSE
 
     This software is open source software under the "Simplified BSD License"

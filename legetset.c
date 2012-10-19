@@ -14,6 +14,9 @@
 
    @author Christian D&ouml;nges <cd@platypus-projects.de>
 
+    @note The master repository for this file is at
+     <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
+
 
     LICENSE
 
@@ -76,7 +79,7 @@ uint_fast16_t leGetUint16(void const *pSrc) {
 
     assert(NULL != pS);
 
-    u = (((uint_fast16_t) *(pS + 1)) << 8) + *pS);
+    u = (((uint_fast16_t) *(pS + 1)) << 8) + *pS;
 
     return u;
 } // leGetUint16()

@@ -5,6 +5,9 @@
 
    @author Christian D&ouml;nges <cd@platypus-projects.de>
 
+   @note The master repository for this file is at
+    <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
+
 
    Compile with UNITTEST #defined
    (i.e. gcc -DUNITTEST -DNDEBUG -o factorial factorial.c)

@@ -6,7 +6,8 @@
 
     @author Christian D&ouml;nges <cd@platypus-projects.de>
 
-    @note The master repository for this file is at <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
+    @note The master repository for this file is at
+     <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
 
     LICENSE
 
@@ -118,7 +119,7 @@ uint_fast16_t hexToInt16(char const *pSrc) {
     assert(NULL != pSrc);
 
     for (i = 0;i < 4;i ++, pSrc++) {
-        assert(isxdigit(*pSrc));
+        assert(isxdigit((int) *pSrc));
         n <<= 4;
         n += (uint_fast16_t) hexdigitToNibble(*pSrc);
     } // for i
@@ -135,7 +136,7 @@ uint_fast32_t hexToInt32(char const *pSrc) {
     assert(NULL != pSrc);
 
     for (i = 0;i < 8;i ++, pSrc++) {
-        assert(isxdigit(*pSrc));
+        assert(isxdigit((int) *pSrc));
         n <<= 4;
         n += (uint_fast16_t) hexdigitToNibble(*pSrc);
     } // for i
