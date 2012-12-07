@@ -51,11 +51,12 @@
 #ifndef HEX_H
 #define HEX_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 // Suppress warnings about these symbols not being used.
-//lint -esym(714, hexToInt4, hexToInt8, hexToInt16, hexToInt32, int4ToHex, int8ToHex, int16ToHex, int32ToHex)
-//lint -esym(759, hexToInt4, hexToInt8, hexToInt16, hexToInt32, int4ToHex, int8ToHex, int16ToHex, int32ToHex)
+//lint -esym(714, hexToInt4, hexToInt8, hexToInt16, hexToInt32, int4ToHex, int8ToHex, int16ToHex, int32ToHex, hexbuf2String)
+//lint -esym(759, hexToInt4, hexToInt8, hexToInt16, hexToInt32, int4ToHex, int8ToHex, int16ToHex, int32ToHex, hexbuf2String)
 
 
 /** Converts a 4 bit nibble to an (uppercase) hexadecimal digit. */
@@ -142,4 +143,72 @@ extern uint_fast16_t hexToInt16(char const *pSrc);
 */
 extern uint_fast32_t hexToInt32(char const *pSrc);
 
+
+
+/** Calculate the size of the buffer required by hexbuf2String() with
+   the given options.
+
+   @param nrBytes The number of bytes to dump.
+   @param useCRLF If true, CR+LF will be used to terminate each line.
+       If false, CR will be used.
+   @param showASCII If true, the hex values will be followed by an ASCII
+       representation of each byte. If false, only the hex values will
+       be shown.
+   @param lineWidth The number of bytes to dump in each line. The values
+       8, 16, and 32 are customary, but any value is allowed.
+   @return The size of the buffer required for the dump.
+  */
+extern size_t hexbuf2StringLength(size_t nrBytes,
+     bool useCRLF, bool showASCII, unsigned lineWidth);
+
+
+
+/** Converts the values in the given buffer to a human-readable hex dump.
+
+   The dump is in multiple lines, each of which starts with an 8-digit
+   hexadecimal offset, followed by a SPACE and lineWidth
+   two-digit hexadecimal tuples separated by a single SPACE. If
+   showASCII is true, lineWidth ASCII characters follow. Non-printable
+   characters are replaced with a period (.). Each line is
+   is terminated with a CR or CR+LF, depending on the useCRLF parameter.
+
+   Each line requires 
+   8 + 1 + 3*lineWidth + (showASCII ? lineWidth : 0) + (useCRLF ? 2 : 1)
+   bytes of memory. There are 
+   int(nrBytes / lineWidth) + 1
+   lines. A C string is always zero-terminated, so an additional byte is
+   required.
+
+   If pStringBuffer is NULL, a buffer will be malloc()ed. The caller is
+   responsible for free()ing this buffer.
+
+   In case of an error, <code>errno</code> will be set.
+
+
+   @param pValueBuffer Pointer to the buffer containing the values.
+   @param nrBytes The number of bytes to dump from the buffer.
+   @param pStringBuffer Pointer to the buffer that will contain the dump.
+       The string buffer must be large enough to contain the dump.
+   @param stringBufferSize The size of the string buffer in bytes.
+   @param useCRLF If true, CR+LF will be used to terminate each line.
+       If false, CR will be used.
+   @param showASCII If true, the hex values will be followed by an ASCII
+       representation of each byte. If false, only the hex values will
+       be shown.
+   @param lineWidth The number of bytes to dump in each line. The values
+       8, 16, and 32 are customary, but any value is allowed.
+   @param initialOffset The offset to display for the first byte.
+   @return A pointer to the start of the string buffer containing the hex
+       dump.
+   @retval NULL The string buffer was not changed. If errno != 0, an error
+       occurred.
+   @retval != NULL The string buffer contains the complete hex dump.
+
+   @pre NULL != pValueBuffer
+   @pre lineWidth > 0
+ */
+extern char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
+                           char *pStringBuffer, size_t stringBufferSize,
+                           bool useCRLF, bool useASCII, unsigned lineWidth,
+                           size_t initialOffset);
 #endif // HEX_H

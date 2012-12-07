@@ -50,7 +50,9 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "hex.h"
 
@@ -145,6 +147,129 @@ uint_fast32_t hexToInt32(char const *pSrc) {
 } // hexToInt32()
 
 
+size_t hexbuf2StringLength(size_t nrBytes,
+    bool useCRLF, bool showASCII, unsigned lineWidth) {
+    size_t nrOfLines, bytesPerLine, totalBytes;
+
+    assert(lineWidth > 0);
+
+    if (0 == nrBytes) {
+        return 0;
+    }
+
+    nrOfLines = nrBytes / lineWidth + 1;
+    bytesPerLine = 8 + 1 + 3*lineWidth
+        + (showASCII ? lineWidth : 0)
+         + (useCRLF ? 2 : 1);
+    totalBytes = bytesPerLine * nrOfLines + 1;
+
+    return totalBytes;
+} // hexbuf2StringLength()
+
+
+
+char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
+                    char *pStringBuffer, size_t stringBufferSize,
+                    bool useCRLF, bool showASCII, unsigned lineWidth,
+                    size_t initialOffset) {
+    size_t requiredStringBufferSize = 0;
+    size_t currentOffset = initialOffset;
+    char *pOutputBuffer = NULL;
+
+
+    assert(NULL != pValueBuffer);
+    assert(lineWidth > 0);
+
+
+    // This check is easy, perform it before anything else.
+    if (0 == nrBytes) {
+        // Nothing to do.
+        errno = 0;
+        return NULL;
+    }
+
+
+    // Make sure the output buffer can be used.
+    requiredStringBufferSize = hexbuf2StringLength(nrBytes,
+        useCRLF, showASCII, lineWidth);
+
+    if (NULL == pStringBuffer) {
+        // No output buffer was specified, so create it.
+        if ((pStringBuffer = malloc(requiredStringBufferSize)) == NULL) {
+            errno = ENOMEM;
+            return NULL;
+        }
+    } else {
+        // Check if the specified output buffer is large enough.
+        if (stringBufferSize < requiredStringBufferSize) {
+            errno = ENOMEM;
+            return NULL;
+        }
+    }
+
+
+    // At this point, pStringBuffer provides a buffer large enough to
+    // hold the entire dump, so start dumping.
+    pOutputBuffer = pStringBuffer;
+    while (nrBytes > 0) {
+        unsigned offsetInLine;
+        unsigned char const *pCurrentValue;
+        unsigned paddingChars = 0;
+
+        if (nrBytes < lineWidth) {
+            // The last line is only partially filled.
+            paddingChars = (lineWidth - nrBytes) * 3;
+            lineWidth = nrBytes;
+        }
+        // Place the offset in the buffer.
+        int32ToHex(pStringBuffer, currentOffset);
+        pStringBuffer += 8;
+
+        // Dump as hex touples.
+        for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+             offsetInLine < lineWidth;
+             offsetInLine++, pCurrentValue ++) {
+            *pStringBuffer++ = ' ';
+            int8ToHex(pStringBuffer, *pCurrentValue);
+            pStringBuffer += 2;
+        } // for offsetInLine
+
+        if (showASCII) {
+            char c;
+
+            // Dump ASCII representation.
+            *pStringBuffer++ = ' ';
+            while (paddingChars-- > 0) {
+                // If this is the last line, padd the missing values to
+                // achieve nice alignment of the ASCII representation.
+                *pStringBuffer++ = ' ';
+            }
+            for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+                 offsetInLine < lineWidth;
+                 offsetInLine++, pCurrentValue ++) {
+                c = isprint(*pCurrentValue) ? *pCurrentValue : '.';
+                *pStringBuffer++ = c;
+            } // for offsetInLine
+        } // if showASCII
+
+        // Terminate the line
+        *pStringBuffer++ = '\n';
+        if (useCRLF) {
+            *pStringBuffer++ = '\r';
+        }
+
+        // Continue with next line (if any).
+        currentOffset += lineWidth;
+        pValueBuffer += lineWidth;
+        nrBytes -= lineWidth;
+    } // while nrBytes
+
+    // Terminate the string before returning.
+    *pStringBuffer++ = '\0';
+    return pOutputBuffer;
+} // buf2String()
+
+
 
 #ifdef TEST
 // To compile and run the test harness, use
@@ -167,6 +292,8 @@ int main(int argc, char *argv[]) {
     char hex32Array[8];
     int i, j;
     char *p;
+    size_t requiredStringBufferSize = 0;
+    char *pStringBuffer;
 
 
     // Test nibbleToHexDigit()
@@ -292,6 +419,87 @@ int main(int argc, char *argv[]) {
     }
     printf("int32ToHex() PASSED.\n");
 
+
+    // Test dumping a buffer.
+    for (i = 0;i < 257;i ++) {
+        hex08Array[i] = (char) i;
+    } // for i
+
+    requiredStringBufferSize = hexbuf2StringLength(0, false, true, 8);
+    if (0 != requiredStringBufferSize) {
+        printf("hexbuf2StringLength() case 1 FAILED.\n");
+        exit(1);
+    }
+    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 8);
+    if (requiredStringBufferSize != (117/8 + 1) * (8 + 1 + 4*8 + 1) + 1) {
+        printf("hexbuf2StringLength() case 2 FAILED.\n");
+        exit(1);
+    }
+    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 16);
+    if (requiredStringBufferSize != (117/16 + 1) * (8 + 1 + 4*16 + 1) + 1) {
+        printf("hexbuf2StringLength() case 3 FAILED.\n");
+        exit(1);
+    }
+    requiredStringBufferSize = hexbuf2StringLength(117, false, false, 11);
+    if (requiredStringBufferSize != (117/11 + 1) * (8 + 1 + 3*11 + 1) + 1) {
+        printf("hexbuf2StringLength() case 4 FAILED.\n");
+        exit(1);
+    }
+    requiredStringBufferSize = hexbuf2StringLength(117, true, true, 9);
+    if (requiredStringBufferSize != (117/9 + 1) * (8 + 1 + 4*9 + 2) + 1) {
+        printf("hexbuf2StringLength() case 5 FAILED.\n");
+        exit(1);
+    }
+    printf("hexbuf2StringLength() PASSED.\n");
+
+    pStringBuffer = hexbuf2String(hex08Array, 0, 
+                                  hex16Array, sizeof(hex16Array),
+                                  false, true, 8,
+                                  0);
+    if (NULL != pStringBuffer) {
+        printf("hexbuf2String() with length 0 FAILED.\n");
+        exit(1);
+    }
+    pStringBuffer = hexbuf2String(hex08Array, 117, 
+                                  hex16Array, sizeof(hex16Array),
+                                  false, true, 8,
+                                  0);
+    if (NULL != pStringBuffer) {
+        printf("hexbuf2String() with small buffer FAILED.\n");
+        exit(1);
+    }
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25, 
+                                  NULL, sizeof(hex16Array),
+                                  false, true, 8,
+                                  0);
+    if (NULL == pStringBuffer) {
+        printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
+        exit(1);
+    }
+    printf(pStringBuffer);
+    free(pStringBuffer);
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
+                                  NULL, sizeof(hex16Array),
+                                  false, true, 15,
+                                  0x12340023);
+    if (NULL == pStringBuffer) {
+        printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
+        exit(1);
+    }
+    printf(pStringBuffer);
+    free(pStringBuffer);
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
+                                  NULL, sizeof(hex16Array),
+                                  false, false, 8,
+                                  0x00112233);
+    if (NULL == pStringBuffer) {
+        printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
+        exit(1);
+    }
+    printf(pStringBuffer);
+    free(pStringBuffer);
+
+    printf("hexbuf2String() PASSED.\n");
 
     return 0;   // All tests passed.
 } // main()
