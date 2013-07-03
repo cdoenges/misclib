@@ -221,6 +221,7 @@ void log_logVMessageStart(log_level_t level, char const *format, va_list arglist
             break;
         case LOGLEVEL_NONE:
         default:
+            //-e{224,225} Constant value boolean used intentionally.
             assert(false);
     } // switch (level)
     log_logMessageContinue(level, prepend_string);

@@ -79,7 +79,7 @@ uint_fast16_t leGetUint16(void const *pSrc) {
 
     assert(NULL != pS);
 
-    u = (((uint_fast16_t) *(pS + 1)) << 8) + *pS;
+    u = (uint_fast16_t) (*(pS + 1) << 8) + *pS;
 
     return u;
 } // leGetUint16()

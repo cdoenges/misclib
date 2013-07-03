@@ -58,6 +58,7 @@
 
 // Suppress warnings about these symbols not being used.
 //lint -esym(714, base64_decode, base64_encode)
+//lint -esym(757, base64_decode, base64_encode)
 //lint -esym(759, base64_decode, base64_encode)
 
 

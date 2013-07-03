@@ -46,6 +46,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//lint -esym(714, factorial, ffactorial)
+//lint -esym(759, factorial, ffactorial)
+
 /** Calculates the factorial of the given number.
 
    The factorial of n is n * (n-1) * ... * 2 * 1.

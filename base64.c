@@ -86,7 +86,7 @@ static const signed char s_base64DecodingTable[] = {
 
 
 
-unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength) {
+unsigned char *base64_decode(unsigned char const *pInputString, size_t *pOutputLength) {
 	unsigned char *pOutputData, *pOut;
 	size_t inputLength, outputLength;
 
@@ -94,7 +94,7 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
 		return NULL;
 	}
 
-	inputLength = strlen(pInputString);
+	inputLength = strlen((char const *) pInputString);
 	if (0 == inputLength) {
 		return NULL;
 	}
@@ -102,7 +102,7 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
 	// The output length is roughly 3/4 the input length. We could save one
 	// or two bytes, but since malloc() is usually implemented with a granularity
 	// of at least 4 bytes (more commonly much more), we won't bother.
-	pOutputData = calloc(inputLength * 3 / 4, sizeof(unsigned char));
+	pOutputData = (unsigned char *) calloc(inputLength * 3 / 4, sizeof(unsigned char));
 	if (NULL == pOutputData) {
 		return NULL;
 	}
@@ -126,7 +126,7 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
 				continue;
 			} else if (inValue < 0) {
 				// These are illegal characters. Abort decoding.
-				free(pOutputData);
+				free(pOut);
 				return NULL;
 			}
 			inByte[i++] = (unsigned char) inValue;
@@ -152,7 +152,7 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
 				break;
 			default:
 				// A strange error occurred.
-				free(pOutputData);
+				free(pOut);
 				return NULL;
 		} // switch i
 	} // while inputLength
@@ -163,7 +163,7 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
 
 
 
-unsigned char *base64_encode(unsigned char *pInputData, size_t inputLength) {
+unsigned char *base64_encode(unsigned char const *pInputData, size_t inputLength) {
 	unsigned char *pOutputData;
 	unsigned char *pOutputString;
 

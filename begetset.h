@@ -50,6 +50,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+//lint -esym(714, beSetUint16, beGetUint16, beSetUint32, beGetUint32)
+//lint -esym(759, beSetUint16, beGetUint16, beSetUint32, beGetUint32)
 
 
 /** Writes an unsigned 16-bit integer to a non-aligned location in RAM

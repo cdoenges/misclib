@@ -1,0 +1,11 @@
+{
+	"folders":
+	[
+		{
+			"file_exclude_patterns" : [".gitignore", "*.sublime-workspace"],
+			"folder_exclude_patterns" : [".deps"],
+			"follow_symlinks": true,
+			"path": "/Users/chris/Documents/Sources/github/misclib"
+		}
+	]
+}

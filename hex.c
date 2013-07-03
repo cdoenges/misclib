@@ -160,7 +160,7 @@ size_t hexbuf2StringLength(size_t nrBytes,
     nrOfLines = nrBytes / lineWidth + 1;
     bytesPerLine = 8 + 1 + 3*lineWidth
         + (showASCII ? lineWidth : 0)
-         + (useCRLF ? 2 : 1);
+        + (useCRLF ? 2 : 1);
     totalBytes = bytesPerLine * nrOfLines + 1;
 
     return totalBytes;
@@ -172,9 +172,9 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                     char *pStringBuffer, size_t stringBufferSize,
                     bool useCRLF, bool showASCII, unsigned lineWidth,
                     size_t initialOffset) {
-    size_t requiredStringBufferSize = 0;
+    size_t requiredStringBufferSize;
     size_t currentOffset = initialOffset;
-    char *pOutputBuffer = NULL;
+    char *pOutputBuffer;
 
 
     assert(NULL != pValueBuffer);
@@ -195,7 +195,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
     if (NULL == pStringBuffer) {
         // No output buffer was specified, so create it.
-        if ((pStringBuffer = malloc(requiredStringBufferSize)) == NULL) {
+        if ((pStringBuffer = (char *) malloc(requiredStringBufferSize)) == NULL) {
             errno = ENOMEM;
             return NULL;
         }
@@ -218,15 +218,15 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
         if (nrBytes < lineWidth) {
             // The last line is only partially filled.
-            paddingChars = (lineWidth - nrBytes) * 3;
-            lineWidth = nrBytes;
+            paddingChars = (unsigned) (lineWidth - nrBytes) * 3;
+            lineWidth = (unsigned) nrBytes;
         }
         // Place the offset in the buffer.
-        int32ToHex(pStringBuffer, currentOffset);
+        int32ToHex(pStringBuffer, (uint_fast32_t) currentOffset);
         pStringBuffer += 8;
 
         // Dump as hex touples.
-        for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+        for (offsetInLine = 0, pCurrentValue = (const unsigned char *) pValueBuffer;
              offsetInLine < lineWidth;
              offsetInLine++, pCurrentValue ++) {
             *pStringBuffer++ = ' ';
@@ -244,10 +244,10 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                 // achieve nice alignment of the ASCII representation.
                 *pStringBuffer++ = ' ';
             }
-            for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+            for (offsetInLine = 0, pCurrentValue = (const unsigned char *) pValueBuffer;
                  offsetInLine < lineWidth;
                  offsetInLine++, pCurrentValue ++) {
-                c = isprint(*pCurrentValue) ? *pCurrentValue : '.';
+                c = isprint(*pCurrentValue) ? (char ) *pCurrentValue : '.';
                 *pStringBuffer++ = c;
             } // for offsetInLine
         } // if showASCII

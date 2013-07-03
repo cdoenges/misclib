@@ -60,13 +60,13 @@
 
 
 /** Converts a 4 bit nibble to an (uppercase) hexadecimal digit. */
-#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? 'A' + (v) - 10 : '0' + (v)))
+#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? 'A' + ((v) - 10) : '0' + (v)))
 
 /** Converts a 4 bit nibble to a (lowercase) hexadecimal digit. */
-#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? 'a' + (v) - 10 : '0' + (v)))
+#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? 'a' + ((v) - 10 ): '0' + (v)))
 
 /** Converts a hexadecimal digit to a 4 bit integer. */
-#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (n) - 'A' + 10 : (n) - 'a' + 10))
+#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (n) - ('A' + 10) : (n) - ('a' + 10)))
 
 
 /** Converts an integer nibble to a hexadecimal character.

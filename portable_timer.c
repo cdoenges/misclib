@@ -74,7 +74,8 @@ void pt_start(portable_timer_t *pt) {
     QueryPerformanceFrequency(&pt->frequency);
     QueryPerformanceCounter(&pt->startTime);
 #else
-    gettimeofday(&pt->startTime, NULL);
+    // Ignore the error, if any.
+    (void) gettimeofday(&pt->startTime, NULL);
 #endif // !WIN32
 } // end pt_start()
 
@@ -88,7 +89,8 @@ void pt_stop(portable_timer_t *pt) {
 #ifdef WIN32
     QueryPerformanceCounter(&pt->endTime);
 #else
-    gettimeofday(&pt->endTime, NULL);
+    // Ignore the error, if any.
+    (void) gettimeofday(&pt->endTime, NULL);
 #endif // !WIN32
     pt->running = false;
 } // end pt_stop()
@@ -115,7 +117,8 @@ unsigned long pt_elapsed_us(portable_timer_t *pt) {
 #ifdef WIN32
         QueryPerformanceCounter(&pt->endTimer);
 #else
-        gettimeofday(&pt->endTime, NULL);
+        // Ignore the error, if any.
+        (void) gettimeofday(&pt->endTime, NULL);
 #endif // !WIN32
     } // if running
 
@@ -133,13 +136,13 @@ unsigned long pt_elapsed_us(portable_timer_t *pt) {
 
 
 void pt_sleep_ms(unsigned long milliseconds) {
-#if WIN32
+#ifdef WIN32
     Sleep(milliseconds);
 #else // requires _POSIX_C_SOURCE >= 199309L
-    time_t seconds = milliseconds / 1000;
+    time_t seconds = (time_t) (milliseconds / 1000);
     struct timespec sleeptime = {
         seconds,
-        (milliseconds - (seconds*1000)) * 1000000L };
+        (long) (milliseconds - (unsigned long) (seconds*1000)) * 1000000UL };
     if (nanosleep(&sleeptime, NULL) != 0) {
         // TODO Do something intelligent here.
     }

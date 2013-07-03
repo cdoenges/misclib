@@ -81,7 +81,7 @@ kv_object_t *kv_iterateNext(kv_iterator_t *pIterator) {
 
 
 kv_collection_t *kv_createCollection(void) {
-    kv_collection_t *pCollection = calloc(1ul, sizeof(kv_collection_t));
+    kv_collection_t *pCollection = (kv_collection_t *) calloc(1ul, sizeof(kv_collection_t));
 
     // Note: the following is only needed for the odd platform where
     // NULL is not identical to binary 0.
@@ -129,11 +129,11 @@ kv_object_t *kv_createObject(kv_key_t pKey) {
     kv_object_t *pObject;
     assert(NULL != pKey);
 
-    if (NULL == (pObject = calloc(1ul, sizeof(kv_object_t)))) {
+    if (NULL == (pObject = (kv_object_t *) calloc(1ul, sizeof(kv_object_t)))) {
         return NULL;
     }
 
-    if (NULL == (pObject->key = (kv_key_t) strdup((char *) pKey))) {
+    if (NULL == (pObject->key = (kv_key_t) strdup((char const *) pKey))) {
         free(pObject);
         return NULL;
     }
@@ -170,7 +170,7 @@ kv_object_t *kv_findObjectForKey(kv_collection_t const *pCollection, kv_key_t pK
     pObject = kv_initializeIterator(&iterator, pCollection);
     while (NULL != pObject) {
         assert(NULL != pObject->key);
-        if (strcmp((char *) pKey, (char *) pObject->key) == 0) {
+        if (strcmp((char const *) pKey, (char const *) pObject->key) == 0) {
             return pObject;
         }
         pObject = kv_iterateNext(&iterator);
@@ -324,7 +324,7 @@ bool kv_remove(kv_collection_t *pCollection, kv_key_t pKey) {
     pObject = kv_initializeIterator(&iterator, pCollection);
     while (NULL != pObject) {
         assert(NULL != pObject->key);
-        if (strcmp((char *) pKey, (char *) pObject->key) == 0) {
+        if (strcmp((char const *) pKey, (char const *) pObject->key) == 0) {
             break;
         }
         pPreviousObject = pObject;
