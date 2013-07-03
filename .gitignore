@@ -1,3 +1,6 @@
+*.o
+*.sublime-workspace
 .deps
+_lint.txt
 doc/html
 tags
