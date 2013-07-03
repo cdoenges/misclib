@@ -13,7 +13,8 @@ DOXYGEN = doxygen
 LDFLAGS = -g
 LIBS = -lm
 
-OBJS = begetset.o \
+OBJS = base64.o \
+begetset.o \
 itoa.o \
 legetset.o \
 portable_timer.o \
@@ -23,7 +24,8 @@ keyvalue.o \
 logging.o \
 tcputils.o
 
-LINT=wine ~/Applications/pclint/LINT-NT.EXE
+LINTPATH = $(HOME)/Applications/pclint
+LINT = wine $(LINTPATH)/LINT-NT.EXE
 #LINT=/cygdrive/c/Programme/pclint/lint-nt.exe
 OBJDIR = objs
 SRCS = $(OBJS:.o=.c) $(VIWA_OBJS:.o=.c)
@@ -53,18 +55,15 @@ doc: docs
 
 .PHONY: lint
 # Run static analysis using PC-Lint/Flexe-Lint
-lint: $(SRCS) lint/lint_cmac.h
+lint: $(SRCS) $(LINTPATH)/lint_cmac.h
 	-rm -f _lint.txt
-	-$(LINT) -v -ilint env-vim.lnt  $(SRCS) -summary >_lint.txt
-# Use -v* for lots of debug output.
-#	-$(LINT) -v -ilint -ilua/include lint/prj-flasi-gcc.lnt env-vim.lnt  $(SRCS) -summary >_lint_gcc.txt
-#	-$(LINT) -b -v -ilint lint/prj-flasi-msc100.lnt env-vim.lnt  $(SRCS) -summary\(\) >_lint_msc100.txt
+	-$(LINT) +v -i$(LINTPATH) co-gcc.lnt env-vim.lnt  $(SRCS) -summary >_lint.txt
+# Use +v* for lots of debug output.
+#	-$(LINT) -b -v -i$(LINTPATH) lint/prj-msc100.lnt env-vim.lnt  $(SRCS) -summary\(\) >_lint_msc100.txt
 
-lint/gcc-include-path.lnt: lint/co-gcc.mak
-	cd lint && make -f co-gcc.mak && cd ..
+$(LINTPATH)/lint_cmac.h:
+	cd $(LINTPATH) && make -f co-gcc.mak && cd -
 
-lint/lint_cmac.h: lint/co-gcc.h lint/gcc-include-path.lnt
-	cd lint && make -f co-gcc.mak && cd ..
 
 
 .PHONY: all
