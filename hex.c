@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -160,7 +160,7 @@ size_t hexbuf2StringLength(size_t nrBytes,
     nrOfLines = nrBytes / lineWidth + 1;
     bytesPerLine = 8 + 1 + 3*lineWidth
         + (showASCII ? lineWidth : 0)
-        + (useCRLF ? 2 : 1);
+         + (useCRLF ? 2 : 1);
     totalBytes = bytesPerLine * nrOfLines + 1;
 
     return totalBytes;
@@ -171,18 +171,16 @@ size_t hexbuf2StringLength(size_t nrBytes,
 char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                     char *pStringBuffer, size_t stringBufferSize,
                     bool useCRLF, bool showASCII, unsigned lineWidth,
-                    size_t initialOffset) {
-    size_t requiredStringBufferSize;
+                    bool showOffset, size_t initialOffset) {
+    size_t requiredStringBufferSize = 0;
     size_t currentOffset = initialOffset;
-    char *pOutputBuffer;
+    char *pOutputBuffer = NULL;
 
 
     assert(NULL != pValueBuffer);
-    assert(lineWidth > 0);
-
 
     // This check is easy, perform it before anything else.
-    if (0 == nrBytes) {
+    if ((0 == nrBytes) || (0 == lineWidth)) {
         // Nothing to do.
         errno = 0;
         return NULL;
@@ -195,7 +193,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
     if (NULL == pStringBuffer) {
         // No output buffer was specified, so create it.
-        if ((pStringBuffer = (char *) malloc(requiredStringBufferSize)) == NULL) {
+        if ((pStringBuffer = malloc(requiredStringBufferSize)) == NULL) {
             errno = ENOMEM;
             return NULL;
         }
@@ -218,15 +216,18 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
         if (nrBytes < lineWidth) {
             // The last line is only partially filled.
-            paddingChars = (unsigned) (lineWidth - nrBytes) * 3;
-            lineWidth = (unsigned) nrBytes;
+            paddingChars = (lineWidth - nrBytes) * 3;
+            lineWidth = nrBytes;
         }
-        // Place the offset in the buffer.
-        int32ToHex(pStringBuffer, (uint_fast32_t) currentOffset);
-        pStringBuffer += 8;
+
+        if (showOffset) {
+            // Place the offset in the buffer.
+            int32ToHex(pStringBuffer, currentOffset);
+            pStringBuffer += 8;
+        }
 
         // Dump as hex touples.
-        for (offsetInLine = 0, pCurrentValue = (const unsigned char *) pValueBuffer;
+        for (offsetInLine = 0, pCurrentValue = pValueBuffer;
              offsetInLine < lineWidth;
              offsetInLine++, pCurrentValue ++) {
             *pStringBuffer++ = ' ';
@@ -244,10 +245,10 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                 // achieve nice alignment of the ASCII representation.
                 *pStringBuffer++ = ' ';
             }
-            for (offsetInLine = 0, pCurrentValue = (const unsigned char *) pValueBuffer;
+            for (offsetInLine = 0, pCurrentValue = pValueBuffer;
                  offsetInLine < lineWidth;
                  offsetInLine++, pCurrentValue ++) {
-                c = isprint(*pCurrentValue) ? (char ) *pCurrentValue : '.';
+                c = isprint(*pCurrentValue) ? *pCurrentValue : '.';
                 *pStringBuffer++ = c;
             } // for offsetInLine
         } // if showASCII
@@ -455,23 +456,35 @@ int main(int argc, char *argv[]) {
     pStringBuffer = hexbuf2String(hex08Array, 0, 
                                   hex16Array, sizeof(hex16Array),
                                   false, true, 8,
-                                  0);
+                                  true, 0);
     if (NULL != pStringBuffer) {
         printf("hexbuf2String() with length 0 FAILED.\n");
         exit(1);
     }
+    printf("%s\n", hex16Array);
     pStringBuffer = hexbuf2String(hex08Array, 117, 
                                   hex16Array, sizeof(hex16Array),
                                   false, true, 8,
-                                  0);
+                                  true, 0);
     if (NULL != pStringBuffer) {
         printf("hexbuf2String() with small buffer FAILED.\n");
         exit(1);
     }
+    printf("%s\n", hex16Array);
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 25, 
                                   NULL, sizeof(hex16Array),
                                   false, true, 8,
-                                  0);
+                                  true, 0);
+    if (NULL == pStringBuffer) {
+        printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
+        exit(1);
+    }
+    printf(pStringBuffer);
+    free(pStringBuffer);
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25, 
+                                  NULL, sizeof(hex16Array),
+                                  false, true, 8,
+                                  false, 0);
     if (NULL == pStringBuffer) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
@@ -481,7 +494,7 @@ int main(int argc, char *argv[]) {
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
                                   NULL, sizeof(hex16Array),
                                   false, true, 15,
-                                  0x12340023);
+                                  true, 0x12340023);
     if (NULL == pStringBuffer) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
@@ -491,7 +504,7 @@ int main(int argc, char *argv[]) {
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
                                   NULL, sizeof(hex16Array),
                                   false, false, 8,
-                                  0x00112233);
+                                  true, 0x00112233);
     if (NULL == pStringBuffer) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);

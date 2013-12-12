@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -60,13 +60,13 @@
 
 
 /** Converts a 4 bit nibble to an (uppercase) hexadecimal digit. */
-#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? 'A' + ((v) - 10) : '0' + (v)))
+#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? 'A' + (v) - 10 : '0' + (v)))
 
 /** Converts a 4 bit nibble to a (lowercase) hexadecimal digit. */
-#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? 'a' + ((v) - 10 ): '0' + (v)))
+#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? 'a' + (v) - 10 : '0' + (v)))
 
 /** Converts a hexadecimal digit to a 4 bit integer. */
-#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (n) - ('A' + 10) : (n) - ('a' + 10)))
+#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (n) - 'A' + 10 : (n) - 'a' + 10))
 
 
 /** Converts an integer nibble to a hexadecimal character.
@@ -188,7 +188,9 @@ extern size_t hexbuf2StringLength(size_t nrBytes,
    @param pValueBuffer Pointer to the buffer containing the values.
    @param nrBytes The number of bytes to dump from the buffer.
    @param pStringBuffer Pointer to the buffer that will contain the dump.
-       The string buffer must be large enough to contain the dump.
+       The string buffer must be large enough to contain the dump. If NULL is
+       specified, the function will malloc() a buffer. The caller is responsible
+       for freeing the buffer.
    @param stringBufferSize The size of the string buffer in bytes.
    @param useCRLF If true, CR+LF will be used to terminate each line.
        If false, CR will be used.
@@ -196,7 +198,10 @@ extern size_t hexbuf2StringLength(size_t nrBytes,
        representation of each byte. If false, only the hex values will
        be shown.
    @param lineWidth The number of bytes to dump in each line. The values
-       8, 16, and 32 are customary, but any value is allowed.
+       8, 16, and 32 are customary, but any value is allowed. If the value is 0,
+       no output will be generated.
+   @param showOffset If true, the offset (= address) will be prepended to the
+      data.
    @param initialOffset The offset to display for the first byte.
    @return A pointer to the start of the string buffer containing the hex
        dump.
@@ -205,10 +210,9 @@ extern size_t hexbuf2StringLength(size_t nrBytes,
    @retval != NULL The string buffer contains the complete hex dump.
 
    @pre NULL != pValueBuffer
-   @pre lineWidth > 0
  */
 extern char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                            char *pStringBuffer, size_t stringBufferSize,
                            bool useCRLF, bool useASCII, unsigned lineWidth,
-                           size_t initialOffset);
+                           bool showOffset, size_t initialOffset);
 #endif // HEX_H
