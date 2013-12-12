@@ -26,7 +26,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 
