@@ -279,7 +279,7 @@ ssize_t tcp_send_and_receive(int theSocket,
 
 
 
-int tcp_server_connect(int port) {
+int tcp_connect_to_server(int port) {
     SOCKET sd, sc;
     struct sockaddr_in server = { 0 };
     struct sockaddr_in client;
@@ -292,7 +292,8 @@ int tcp_server_connect(int port) {
 #endif // _WIN32
 
 
-    assert(port <= 65535);
+    log_logMessage(LOGLEVEL_DEBUG, "tcp_connect_to_server(%d)", port);
+    assert((port >= 0) && (port <= 65535));
     if (NULL == itoa(port, portString, 10)) {
         log_logMessage(LOGLEVEL_ERROR, "itoa(%d) failed.", port);
         return -6;
@@ -362,7 +363,7 @@ int tcp_server_connect(int port) {
     log_logMessage(LOGLEVEL_DEBUG1, "Server socket accepted connection from %s:%d", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
     return (int) sc;
-} // tcp_server_connect()
+} // tcp_connect_to_server()
 
 
 
@@ -371,8 +372,8 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     struct sockaddr_in server;
 
 
-    log_logMessage(LOGLEVEL_DEBUG, "tcp_server(%d, %p, %s)",
-		port, pServerFunction, multiThreaded ? "true" : "false");
+    log_logMessage(LOGLEVEL_DEBUG, "tcp_server(%d, @0x%p, %s)",
+        port, pServerFunction, multiThreaded ? "true" : "false");
 
 #ifdef _WIN32
     if (multiThreaded) {
@@ -421,8 +422,8 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
 
 #ifndef _WIN32
         if (multiThreaded) {
-			pid_t childpid;
-			childpid = fork();
+            pid_t childpid;
+            childpid = fork();
             if (0 == childpid) {
                 // Running the child process.
                 (void) closesocket(sd);
@@ -435,7 +436,7 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
             }
         } else
 #endif // !_WIN32
-		{
+        {
             bool result = pServerFunction(sc, &client);
             closesocket(sc);
             if (result) {
@@ -491,10 +492,10 @@ void spawnEchoServer(void) {
     // This is the child process, which we use for the server.
     if (tcp_server(port, echoserver, false) < 0) {
         perror("Error in server: ");
-		_endthreadex((unsigned)-1L);
+        _endthreadex((unsigned)-1L);
     }
     printf("spawnEchoServer terminating\n");
-	_endthreadex(0);
+    _endthreadex(0);
 } // spawnEchoServer()
 
 
@@ -518,7 +519,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Using localhost:%d for server.\n", port);
-	if (0 != tcp_init()) {
+    if (0 != tcp_init()) {
         perror("Unable to initialize TCP/IP subsystem.");
         exit(-1);
     }
@@ -537,14 +538,14 @@ int main(int argc, char *argv[]) {
         exit(clientSocket);
     }
 
-	_snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "Teststring");
+    _snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "Teststring");
     receiveLength = tcp_send_and_receive(clientSocket,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
     receiveBuffer[receiveLength] = '\0';
     printf("<- '%s'\n", receiveBuffer);
 
-	_snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "A much longer string that will serve as the test string.");
+    _snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "A much longer string that will serve as the test string.");
     receiveLength = tcp_send_and_receive(clientSocket,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
