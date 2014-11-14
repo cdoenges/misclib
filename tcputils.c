@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2011-2014, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -58,10 +58,10 @@
 
 
     PORTING
-    Only the client code is currently compatible with the Win32 API. This will
-    not change until a replacement for fork() is found.
-
     When linking on Win32, make sure you link wsock32.lib.
+
+    Compile with: /MT /D "_X86_" /D "_CRT_USE_WINAPI_FAMILY_DESKTOP_APP" /c
+
 
  */
 
@@ -77,22 +77,24 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "itoa.h" // itoa() is present only on Windows.
 #else
 #include <io.h>
 #include <Winsock2.h>
 #include <Ws2tcpip.h>
 // link with Ws2_32.lib
 #pragma comment(lib, "Ws2_32.lib")
+#ifdef TEST
+#include <windows.h>
+#include <process.h>    /* _beginthread, _endthread */
+#endif // TEST
 #endif // _WIN32
 #include <signal.h>
 #include <sys/types.h>
 
 #include "logging.h"
 #include "tcputils.h"
-#ifndef _WIN32
-// itoa() is present only on Windows.
-#include "itoa.h"
-#endif //!_WIN32
+
 
 static bool isInitialized = false;
 
@@ -188,7 +190,7 @@ int tcp_init(void) {
 
     isInitialized = true;
     return 0;
-} // tcp_ini()
+} // tcp_init()
 
 
 
@@ -363,11 +365,21 @@ int tcp_server_connect(int port) {
 } // tcp_server_connect()
 
 
-#ifndef _WIN32
-int tcp_server(int port, serverfunction pServerFunction) {
+
+int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     int sd;
     struct sockaddr_in server;
-    pid_t childpid;
+
+
+    log_logMessage(LOGLEVEL_DEBUG, "tcp_server(%d, %p, %s)",
+		port, pServerFunction, multiThreaded ? "true" : "false");
+
+#ifdef _WIN32
+    if (multiThreaded) {
+        log_logMessage(LOGLEVEL_ERROR, "tcp_server() multi-threading not supported on win32.");
+        return -5;
+    }
+#endif // _WIN32
 
 
     // Set up the socket.
@@ -376,17 +388,20 @@ int tcp_server(int port, serverfunction pServerFunction) {
     server.sin_port = htons(port);
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         // An error occurred, errno will specify the reason.
+        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): socket() failed: %s", strerror(errno));
         return -1;
     }
 
     if (bind(sd, (struct sockaddr *) &server, sizeof(server)) != 0) {
         // Binding to the socket failed.
+        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): bind() failed: %s", strerror(errno));
         (void) closesocket(sd);
         return -2;
     }
 
     if (listen(sd, 4) != 0) {
         // Listening failed.
+        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): listen() failed: %s", strerror(errno));
         (void) closesocket(sd);
         return -3;
     }
@@ -399,17 +414,33 @@ int tcp_server(int port, serverfunction pServerFunction) {
 
         if ((sc = accept(sd, (struct sockaddr *) &client, &clientSize)) < 0) {
             // An error occurred.
+            log_logMessage(LOGLEVEL_ERROR, "tcp_server(): accept() failed: %s", strerror(errno));
             (void) closesocket(sd);
             return -4;
         }
-        childpid = fork();
-        if (0 == childpid) {
-            // Running the child process.
-            (void) closesocket(sd);
-            pServerFunction(sc, &client);
-        } else {
-            // Running the parent process.
-            (void) closesocket(sc);
+
+#ifndef _WIN32
+        if (multiThreaded) {
+			pid_t childpid;
+			childpid = fork();
+            if (0 == childpid) {
+                // Running the child process.
+                (void) closesocket(sd);
+                if (pServerFunction(sc, &client)) {
+                    break;
+                }
+            } else {
+                // Running the parent process.
+                (void) closesocket(sc);
+            }
+        } else
+#endif // !_WIN32
+		{
+            bool result = pServerFunction(sc, &client);
+            closesocket(sc);
+            if (result) {
+                break;
+            }
         }
     } // forever
 
@@ -425,7 +456,7 @@ int tcp_server(int port, serverfunction pServerFunction) {
    @param theSocket The socket to use for communications.
    @param from The client address.
  */
-void echoserver(int theSocket, struct sockaddr_in *from) {
+bool echoserver(int theSocket, struct sockaddr_in *from) {
     char rxTxBuffer[1024];
 
     printf("Serving %s:%d\n", inet_ntoa(from->sin_addr), ntohs(from->sin_port));
@@ -446,10 +477,25 @@ void echoserver(int theSocket, struct sockaddr_in *from) {
         } else {
             printf("Disconnected from %s:%d\n", inet_ntoa(from->sin_addr), ntohs(from->sin_port));
             (void) closesocket(theSocket);
-            exit(0);
+            return true;
         }
     } // forever
 } // echoserver()
+
+
+#ifdef _WIN32
+int port = 10250;
+
+void spawnEchoServer(void) {
+ 
+    // This is the child process, which we use for the server.
+    if (tcp_server(port, echoserver, false) < 0) {
+        perror("Error in server: ");
+		_endthreadex((unsigned)-1L);
+    }
+    printf("spawnEchoServer terminating\n");
+	_endthreadex(0);
+} // spawnEchoServer()
 
 
 
@@ -457,58 +503,57 @@ void echoserver(int theSocket, struct sockaddr_in *from) {
    module.
  */
 int main(int argc, char *argv[]) {
-    int port = 10250;
-    int childpid;
-
+    char sendBuffer[1024], receiveBuffer[1024];
+    int clientSocket;
+    ssize_t receiveLength;
+    uintptr_t serverThread;
+ 
 
     if (argc > 1) {
         port = (int) strtol(argv[1], NULL, 0);
         if (EINVAL == errno) {
             printf("Usage: %s <port>\n", argv[0]);
-            return -1;
+            exit(-1);
         }
     }
 
     printf("Using localhost:%d for server.\n", port);
-
-    if ((childpid = fork()) == 0) {
-        // This is the child process, which we use for the server.
-        if (tcp_server(port, echoserver) < 0) {
-            perror("Error in server: ");
-            return -1;
-        }
-    } else {
-        // This is the parent process, which we use for the client.
-        char sendBuffer[1024], receiveBuffer[1024];
-        int clientSocket = tcp_client_connect("localhost", port);
-        ssize_t receiveLength;
-
-
-        if (clientSocket < 0) {
-            perror("Error while creating client socket: ");
-            kill(childpid, SIGKILL);
-            return clientSocket;
-        }
-
-        snprintf(sendBuffer, sizeof(sendBuffer), "Teststring");
-        receiveLength = tcp_send_and_receive(clientSocket,
-                            sendBuffer, strlen(sendBuffer),
-                            receiveBuffer, sizeof(receiveBuffer));
-        receiveBuffer[receiveLength] = '\0';
-        printf("<- '%s'\n", receiveBuffer);
-
-        snprintf(sendBuffer, sizeof(sendBuffer), "A much longer string that will serve as the test string.");
-        receiveLength = tcp_send_and_receive(clientSocket,
-                            sendBuffer, strlen(sendBuffer),
-                            receiveBuffer, sizeof(receiveBuffer));
-        receiveBuffer[receiveLength] = '\0';
-        printf("<- '%s'\n", receiveBuffer);
-
-        tcp_close(clientSocket);
-
-        kill(childpid, SIGKILL);
+	if (0 != tcp_init()) {
+        perror("Unable to initialize TCP/IP subsystem.");
+        exit(-1);
     }
-    return 0;
+
+    serverThread = _beginthread(spawnEchoServer, 0, NULL );
+    if (0 == serverThread) {
+        perror("_beginthread() failed.");
+        exit(-1);
+    }
+
+    // This is the parent process, which we use for the client.
+    clientSocket = tcp_client_connect("localhost", port);
+
+    if (clientSocket < 0) {
+        perror("Error while creating client socket: ");
+        exit(clientSocket);
+    }
+
+	_snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "Teststring");
+    receiveLength = tcp_send_and_receive(clientSocket,
+                        sendBuffer, strlen(sendBuffer),
+                        receiveBuffer, sizeof(receiveBuffer));
+    receiveBuffer[receiveLength] = '\0';
+    printf("<- '%s'\n", receiveBuffer);
+
+	_snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "A much longer string that will serve as the test string.");
+    receiveLength = tcp_send_and_receive(clientSocket,
+                        sendBuffer, strlen(sendBuffer),
+                        receiveBuffer, sizeof(receiveBuffer));
+    receiveBuffer[receiveLength] = '\0';
+    printf("<- '%s'\n", receiveBuffer);
+
+    tcp_close(clientSocket);
+
+    exit(0);
 } // main()
 #endif // TEST
-#endif // !_WIN32
+#endif // _WIN32

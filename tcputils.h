@@ -18,7 +18,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2011-2014, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,9 @@
 #ifndef TCPUTILS_H
 #define TCPUTILS_H
 
+#include <stdbool.h>
 #include <string.h>
+
 
 
 #ifndef _WIN32
@@ -74,8 +76,14 @@ typedef long ssize_t;
 
 /** Server function that is called by tcp_server whenever a new connection
    is established.
+
+   @param int sc - the socket used to communicate with the client.
+   @param struct sockaddr_in *from - The client address.
+   @return Shut down the server?
+   @retval true Close down the server.
+   @retval false Keep on accepting connections from clients.
  */
-typedef void serverfunction(int, struct sockaddr_in *);
+typedef bool serverfunction(int, struct sockaddr_in *);
 
 
 
