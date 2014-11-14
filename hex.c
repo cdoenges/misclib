@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2014, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -158,16 +158,21 @@ size_t hexbuf2StringLength(size_t nrBytes,
     }
 
     nrOfLines = nrBytes / lineWidth + 1;
-    bytesPerLine = 8 + 1 + 3*lineWidth
-        + (showASCII ? lineWidth : 0)
-         + (useCRLF ? 2 : 1);
+
+	if ((1 == nrOfLines) && !showASCII) {
+		bytesPerLine = 8 + 1 + 3 * nrOfLines + (useCRLF ? 2 : 1);
+	} else {
+		bytesPerLine = 8 + 1 + 3 * lineWidth
+			+ (showASCII ? lineWidth : 0)
+			+ (useCRLF ? 2 : 1);
+	}
     totalBytes = bytesPerLine * nrOfLines + 1;
 
     return totalBytes;
 } // hexbuf2StringLength()
 
 
-
+#ifdef ENOMEM
 char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                     char *pStringBuffer, size_t stringBufferSize,
                     bool useCRLF, bool showASCII, unsigned lineWidth,
@@ -269,7 +274,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
     *pStringBuffer++ = '\0';
     return pOutputBuffer;
 } // buf2String()
-
+#endif // ENOMEM
 
 
 #ifdef TEST
