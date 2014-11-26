@@ -60,9 +60,20 @@
 
 #ifndef _WIN32
 #include <arpa/inet.h>
+#include <sys/socket.h>
+
+/** Windows uses this to specify an error during socket creation. */
+#define INVALID_SOCKET -1
+
 #else
-//lint -e{451} WinSock.h does not have an include guard that PC-Lint likes.
-#include <WinSock.h>
+#ifndef _WINDOWS_
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#endif // _WINDOWS_
+//lint -e{451} WinSock2.h does not have an include guard that PC-Lint likes.
+#include <WinSock2.h>
+#include <Ws2tcpip.h>
 
 /** Signed size_t.
 
@@ -84,6 +95,69 @@ typedef long ssize_t;
    @retval false Keep on accepting connections from clients.
  */
 typedef bool serverfunction(int, struct sockaddr_in *);
+
+typedef struct {
+    /** The port to listen on. */
+    int port;
+    /** The function to call when a client connects to the socket.
+       May be NULL.
+
+       @note If you read from the socket at this point, it will probably block.
+     */
+    serverfunction *pFctConnect;
+    /** The function to call when data is received by the socket. */
+    serverfunction *pFctReceive;
+    /** The function to call when a client disconnects to the socket.
+       May be NULL.
+
+       @note The socket is already closed at this point, and the client address
+       will be NULL, so do not try to use the socket. It is provided only for
+       reference purposes, so you can clean up internal data structures.
+     */
+    serverfunction *pFctDisconnect;
+    // Private from here on.
+    /** The server socket that will listen for incoming connections. */
+    int listenSocket;
+    /** The client socket that will communicate with a client. */
+    int clientSocket;
+    /** The address of the client (only valid while clientSocket is active). */
+    struct sockaddr_in client;
+    /** The size of client. */
+    socklen_t clientSize;
+} serversocket_t;
+
+
+
+/** Logs the given data using loglevel LOGLEVEL_DEBUG2.
+
+   @param pData The data that will be logged.
+   @param nrOfBytes The number of data bytes to log. May be split into
+    multiple lines of output.
+   @param prefix A string of exactly 8 characters that will prefix the first
+    line of output.
+*/
+extern void tcp_log_data(char const *pData, size_t nrOfBytes, char const *prefix);
+
+
+/** Set the socket into non-blocking mode.
+
+    @param theSocket The filedescriptor of the socket to change.
+    @return Was the socket set to non-blocking?
+    @retval true The socket is non-blocking.
+    @retval false Changing the socket to non-blocking failed.
+ */
+extern bool tcp_set_socket_nonblocking(int theSocket);
+
+
+
+/** Set the socket into blocking mode.
+
+    @param theSocket The filedescriptor of the socket to change.
+    @return Was the socket set to blocking?
+    @retval true The socket is blocking.
+    @retval false Changing the socket to blocking failed.
+ */
+extern bool tcp_set_socket_blocking(int theSocket); 
 
 
 
@@ -177,18 +251,38 @@ extern ssize_t tcp_send_and_receive(int theSocket,
 
 
 
-#ifndef _WIN32
 /** A simple server that listens on the specified port and calls the
    serverfunction whenever a new client connection is made.
 
    @param port The port the server will listen on.
    @param pServerFunction Pointer to the function that will handle the connection
       once it has been established.
+   @param multiThreaded True if connections to the server spawn a new thread,
+      false otherwise.
    @return Did an error occur?
    @retval 0 No error occurred.
    @retval &lt;0 An error occurred. Consult errno for details.
 */
-extern int tcp_server(int port, serverfunction pServerFunction);
-#endif // !_WIN32
+extern int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded);
 
+
+
+/** A simple server that opens multiple ports and calls the corresponding
+   serverfunction whenever there is a connection.
+
+   This is a single-threaded implementation.
+
+   @param nrOfSockets The number of sockets in the next parameter.
+   @param serversockets An array of socket descriptions. The port and serverfunction
+   must be set.
+   @param pTimeout The timeout for any connection. The server will be shut down
+   if no activity occurs for the timeout amount of time. Set to NULL to wait
+   indefinitely. 
+   @return Did an error occur?
+   @retval 0 No error occurred.
+   @retval &lt;0 An error occurred. Consult errno for details.
+*/
+extern int tcp_server_multiport(unsigned nrOfSockets,
+                         serversocket_t serversockets[],
+                         struct timeval *pTimeout);
 #endif // TCPUTILS_H

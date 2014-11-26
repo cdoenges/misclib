@@ -52,7 +52,7 @@
     COMPILING
     In order to compile the module with the test harness, use
 
-    $ gcc -DTEST -o tcputils tcputils.c
+    $ gcc -Wall -DTCPTEST -o tcputils tcputils.c itoa.c logging.c hex.c
 
     or whatever convention your compiler uses.
 
@@ -74,35 +74,87 @@
 #include <string.h>
 
 #ifndef _WIN32
+#include <fcntl.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include "itoa.h" // itoa() is present only on Windows.
 #else
-#include <io.h>
-#include <Winsock2.h>
-#include <Ws2tcpip.h>
-// link with Ws2_32.lib
-#pragma comment(lib, "Ws2_32.lib")
 #ifdef TEST
+#ifndef _WINDOWS_
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#endif // _WINDOWS_
 #include <process.h>    /* _beginthread, _endthread */
 #endif // TEST
+#include <io.h>
+// link with Ws2_32.lib
+#pragma comment(lib, "Ws2_32.lib")
 #endif // _WIN32
 #include <signal.h>
 #include <sys/types.h>
 
 #include "logging.h"
+#include "static_assert.h"
 #include "tcputils.h"
+
+
+/*
+ * Compile-time settings for the module.
+ */
+
+
+/** Define to enable dumpin the communicated TCP data to the log
+   (at LOGLEVEL_DEBUG2). If not defined, the code will not be compiled
+   in.
+ */
+#define FTR_TCP_LOG_CONTENT
+
+/** If defined, uses a global buffer to prepare the content to log.
+   If not defined, a local buffer (on the stack) will be used.
+ */
+//#define FTR_TCP_LC_GLOBAL_BUFFER
+
+/** The size in bytes of the buffer used to prepare the content log. */
+#define FTR_TCP_LC_BUFFER_SIZE 4096u
+
+/** The number of data bytes per line to log. MUST be small enough to fit
+   into FTR_TCP_LC_BUFFER_SIZE. */
+#define FTR_TCP_LC_LINE_WIDTH 0x10
+
+static_assert(FTR_TCP_LC_BUFFER_SIZE >= (FTR_TCP_LC_LINE_WIDTH * 3 + 1));
+
+
+
+#ifdef FTR_TCP_LOG_CONTENT
+#include "hex.h"
+
+/** Enables content logging if true, disables if false. */
+static bool logContentEnabled = true;
+
+#ifdef FTR_TCP_LC_GLOBAL_BUFFER
+static char debugBuffer[FTR_TCP_LC_BUFFER_SIZE];
+#endif // FTR_TCP_LC_GLOBAL_BUFFER
+#endif // FTR_TCP_LOG_CONTENT
 
 
 static bool isInitialized = false;
 
-#ifndef _WIN32
+#ifdef _WIN32
+/** Windows uses strange "secure" functions. */
+#define snprintf(x, y, ...) _snprintf_s(x, y, y, ## __VA_ARGS__)
+/** Windows Sleep() is in milliseconds, POSIX sleep() in seconds. */
+#define sleep(x) Sleep(x*1000L)
+#define USE_CRLF true
+#else
 // Windows uses closesocket() instead of close() to close a socket.
 #define closesocket close
 /** Windows uses a proprietary SOCKET definition instead of the POSIX int for file handles. */
 typedef int SOCKET;
+/** Windows terminates threads explicitly. */
+#define _endthreadex(x)
+#define USE_CRLF false
 #endif // !_WIN32
 
 #ifdef _WIN32
@@ -174,6 +226,100 @@ static void tcp_log_error(char const *message) {
 
 
 
+void tcp_log_data(char const *pData, size_t nrOfBytes, char const *prefix) {
+#ifndef FTR_TCP_LC_GLOBAL_BUFFER
+    static char debugBuffer[FTR_TCP_LC_BUFFER_SIZE];
+#endif // FTR_TCP_LC_GLOBAL_BUFFER
+    bool firstLine = true;
+
+
+    assert(strlen(prefix) == 8);
+
+    // Special handling for no data.
+    if (0 == nrOfBytes) {
+        log_logMessage(LOGLEVEL_DEBUG2, "%s (None)", prefix);
+        return;
+    }
+
+    while (nrOfBytes > 0) {
+        // Calculate the most bytes that will fit into the buffer.
+        size_t chunkSize = FTR_TCP_LC_LINE_WIDTH;
+
+        if (nrOfBytes < chunkSize) {
+            chunkSize = nrOfBytes;
+        }
+
+        if (hexbuf2String(pData, chunkSize,
+                          debugBuffer, sizeof(debugBuffer),
+                          USE_CRLF, false,          // CRLF, no ASCII
+                          FTR_TCP_LC_LINE_WIDTH,    // linewidth
+                          false, 0)                 // show no offset, offset = 0
+             == NULL) {
+                log_logMessage(LOGLEVEL_ERROR, "tcp_log_data(): unable to hexify buffer");
+                return;
+        }
+        if (firstLine) {
+            log_logMessage(LOGLEVEL_DEBUG2, "%s %s", prefix, debugBuffer);
+            firstLine = false;
+        } else {
+            log_logMessage(LOGLEVEL_DEBUG2, "         %s", prefix, debugBuffer);
+        }
+
+        nrOfBytes = nrOfBytes - chunkSize;
+        pData = pData + chunkSize;
+    } // while nrOfBytes > 0
+} // tcp_log_data()
+
+
+
+bool tcp_set_socket_nonblocking(int theSocket) {
+#ifndef _WIN32
+    int flags;
+
+      if ((flags = fcntl(theSocket, F_GETFL, 0)) != -1) {
+         fcntl(theSocket, F_SETFL, flags | O_NONBLOCK);
+      } else {
+         tcp_log_error("fcntl(O_NONBLOCK) failed");
+         return false;
+      }
+#else
+    unsigned long nonblocking = 1;
+
+    if (0 != ioctlsocket(theSocket, FIONBIO, &nonblocking)) {
+        tcp_log_error("ioctlsocket(FIONBIO, 1) failed");
+        return false;
+    }
+#endif // _WIN32
+
+    return true;
+} // tcp_set_socket_nonblocking()
+
+
+
+bool tcp_set_socket_blocking(int theSocket) {
+#ifndef _WIN32
+    int flags;
+
+      if ((flags = fcntl(theSocket, F_GETFL, 0)) != -1) {
+         fcntl(theSocket, F_SETFL, flags & ~O_NONBLOCK);
+      } else {
+         tcp_log_error("fcntl(~O_NONBLOCK) failed");
+         return false;
+      }
+#else
+    unsigned long blocking = 0;
+
+    if (0 != ioctlsocket(theSocket, FIONBIO, &blocking)) {
+        tcp_log_error("ioctlsocket(FIONBIO, 0) failed");
+        return false;
+    }
+#endif // _WIN32
+
+    return true;
+} // tcp_set_socket_blocking()
+
+
+
 int tcp_init(void) {
     if (isInitialized) {
         return 0;
@@ -200,6 +346,7 @@ int tcp_client_connect(char const *hostname, int port) {
     struct  hostent *host;
 
 
+    log_logMessage(LOGLEVEL_DEBUG1, "tcp_client_connect('%s', %d)", hostname, port);
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons((unsigned short) port);
     if ((host = gethostbyname(hostname)) == NULL) {
@@ -211,20 +358,20 @@ int tcp_client_connect(char const *hostname, int port) {
     }
     if (NULL == host) {
         // We failed to get a host address.
-        tcp_log_error("Unable to get host address");
+        tcp_log_error("tcp_client_connect(): Unable to get host address");
         return -1;
     }
     memcpy(&(serverAddress.sin_addr.s_addr), host->h_addr, (unsigned short) host->h_length);
 
-    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         // An error occurred, errno will specify the reason.
-        tcp_log_error("Unable to create client socket");
+        tcp_log_error("tcp_client_connect(): Unable to create client socket");
         return -2;
     }
 
     if (connect(sd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) != 0) {
         // The connection failed.
-        tcp_log_error("Unable to connect to server");
+        tcp_log_error("tcp_client_connect(): Unable to connect to server");
         (void) closesocket(sd);
         return -3;
     }
@@ -244,13 +391,65 @@ ssize_t tcp_receive(int theSocket, char *pRxBuffer, size_t rxSize) {
     ssize_t rs;
 
     rs = recv((SOCKET) theSocket, pRxBuffer, (int) rxSize, 0);
+    if (rs < 0) {
+        tcp_log_error("recv() failed: ");
+        return rs;
+    }
+
+#ifdef FTR_TCP_LOG_CONTENT
+    if (logContentEnabled) {
+        tcp_log_data(pRxBuffer, rs, "<--[tcp]");
+    }
+#endif // FTR_TCP_LOG_CONTENT
+
     if (0 == rs) {
         // Peer disconnected.
         (void) closesocket((SOCKET) theSocket);
     }
 
+
     return rs;
 } // tcp_receive()
+
+
+
+ssize_t tcp_recv_with_timeout(int theSocket, 
+                              char *pRxBuffer, size_t rxSize,
+                              unsigned timeout_ms) {
+   fd_set readset;
+   int result;
+   struct timeval tv;
+
+   // Initialize the set
+   FD_ZERO(&readset);
+   FD_SET(theSocket, &readset);
+   
+   // Configure the timeout for the socket.
+   tv.tv_sec = 0;
+   tv.tv_usec = timeout_ms * 1000;
+   result = select(theSocket+1, &readset, NULL, NULL, &tv);
+   if (result < 0) {
+      tcp_log_error("Select on socket failed");
+      return -1;
+   } else if ((result > 0) && FD_ISSET(theSocket, &readset)) {
+      ssize_t rs;
+
+      tcp_set_socket_nonblocking(theSocket);
+
+      // Receive with timeout.
+      rs = recv(theSocket, pRxBuffer, rxSize, 0);
+#ifdef FTR_TCP_LOG_CONTENT
+      if (logContentEnabled) {
+          tcp_log_data(pRxBuffer, rs, "<--[tcp]");
+      }
+#endif // FTR_TCP_LOG_CONTENT
+
+     tcp_set_socket_blocking(theSocket);
+
+      return rs;
+   }
+   return -2;
+} // tcp_recv_with_timeout()
 
 
 
@@ -260,6 +459,13 @@ int tcp_send(int theSocket, char const *pTxBuffer, size_t txSize) {
         tcp_log_error("Sending to socket failed");
         return -1;
     }
+
+#ifdef FTR_TCP_LOG_CONTENT
+    if (logContentEnabled) {
+        tcp_log_data(pTxBuffer, txSize, "[tcp]-->");
+    }
+#endif // FTR_TCP_LOG_CONTENT
+
     return 0;
 } // tcp_send()
 
@@ -292,7 +498,7 @@ int tcp_connect_to_server(int port) {
 #endif // _WIN32
 
 
-    log_logMessage(LOGLEVEL_DEBUG, "tcp_connect_to_server(%d)", port);
+    log_logMessage(LOGLEVEL_DEBUG1, "tcp_connect_to_server(%d)", port);
     assert((port >= 0) && (port <= 65535));
     if (NULL == itoa(port, portString, 10)) {
         log_logMessage(LOGLEVEL_ERROR, "itoa(%d) failed.", port);
@@ -313,7 +519,7 @@ int tcp_connect_to_server(int port) {
     }
 
     // Create the socket.
-    if ((sd = socket(AF_INET, SOCK_STREAM, (int) IPPROTO_TCP)) == -1) {
+    if ((sd = socket(AF_INET, SOCK_STREAM, (int) IPPROTO_TCP)) == INVALID_SOCKET) {
         // An error occurred, errno will specify the reason.
         tcp_log_error("Server socket creation failed");
         return -1;
@@ -372,7 +578,7 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     struct sockaddr_in server;
 
 
-    log_logMessage(LOGLEVEL_DEBUG, "tcp_server(%d, @0x%p, %s)",
+    log_logMessage(LOGLEVEL_DEBUG1, "tcp_server(%d, @0x%p, %s)",
         port, pServerFunction, multiThreaded ? "true" : "false");
 
 #ifdef _WIN32
@@ -387,7 +593,7 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
     server.sin_port = htons(port);
-    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         // An error occurred, errno will specify the reason.
         log_logMessage(LOGLEVEL_ERROR, "tcp_server(): socket() failed: %s", strerror(errno));
         return -1;
@@ -438,20 +644,281 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
 #endif // !_WIN32
         {
             bool result = pServerFunction(sc, &client);
-            closesocket(sc);
+            (void) closesocket(sc);
+            log_logMessage(LOGLEVEL_DEBUG1, "Closed connection on port %d", port);
             if (result) {
                 break;
             }
         }
     } // forever
 
+    log_logMessage(LOGLEVEL_INFO, "Terminating server running on port %d", port);
     (void) closesocket(sd);
     return 0;
 } // tcp_server()
 
 
 
-#ifdef TEST
+int tcp_server_multiport(unsigned nrOfSockets,
+                         serversocket_t serversockets[],
+                         struct timeval *pTimeout) {
+    fd_set masterSet;
+    unsigned i;
+    int errorOccurred = 0;
+    int maxFd = 0;    // Maximum file descriptor for select()
+
+
+    // Create some fancy debug output.
+    log_logMessageStart(LOGLEVEL_DEBUG1, "tcp_server_multiport(%u, [", nrOfSockets);
+    for (i = 0;i < nrOfSockets;i ++) {
+        log_logMessageContinue(LOGLEVEL_DEBUG1, "{ %d, @0x%p, @0x%p, @0x%p }",
+                               serversockets[i].port,
+                               serversockets[i].pFctConnect,
+							   serversockets[i].pFctReceive,
+							   serversockets[i].pFctDisconnect);
+        if (i > 1) {
+            log_logMessageContinue(LOGLEVEL_DEBUG1, ", ");
+        }
+    } // for i
+    log_logMessageContinue(LOGLEVEL_DEBUG1, "])\n");
+
+
+    if (0 == nrOfSockets) {
+        log_logMessage(LOGLEVEL_WARNING, "No server ports specified.");
+        return 0;
+    }
+
+    FD_ZERO(&masterSet);
+
+    for (i = 0;i < nrOfSockets;i ++) {
+        struct sockaddr_in server;
+        int option = 1;
+
+        serversockets[i].clientSocket = INVALID_SOCKET;
+
+        // Set up the socket.
+        server.sin_family = AF_INET;
+        server.sin_addr.s_addr = htonl(INADDR_ANY);
+        server.sin_port = htons(serversockets[i].port);
+        if ((serversockets[i].listenSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+            // An error occurred, errno will specify the reason.
+            log_logMessage(LOGLEVEL_ERROR,
+                           "tcp_server_multiport(): socket() failed for socket #%d: %s",
+                           i, strerror(errno));
+            errorOccurred = -1;
+            break;
+        }
+
+        // Allow a previous socket to be re-used.
+        if (setsockopt(serversockets[i].listenSocket,
+                       SOL_SOCKET,
+                       SO_REUSEADDR,
+                       (char *)&option, sizeof(option)) != 0) {
+            log_logMessage(LOGLEVEL_ERROR,
+                           "tcp_server_multiport(): setsockopt() failed for socket #%d: %s",
+                           i, strerror(errno));
+        }
+
+        // Bind the socket to an address.
+        if (bind(serversockets[i].listenSocket,
+                 (struct sockaddr *) &server, sizeof(server)) != 0) {
+            // Binding to the socket failed.
+            log_logMessage(LOGLEVEL_ERROR,
+                           "tcp_server_multiport(): bind() failed for socket #%d: %s",
+                           i, strerror(errno));
+            errorOccurred = -2;
+            break;
+        }
+
+        // Try to set non-blocking mode.
+        if (!tcp_set_socket_nonblocking(serversockets[i].listenSocket)) {
+            tcp_log_error("tcp_server_multiport(): setting non-blocking mode failed");
+            errorOccurred = -3;
+            break;
+        }
+
+        // Tell the socket to listen for a connection.
+        // Allows no backlog because we do not multi-thread.
+        if (listen(serversockets[i].listenSocket, 0) != 0) {
+            tcp_log_error("tcp_server_multiport(): listen() failed");
+            errorOccurred = -4;
+            break;
+        }
+
+        // Add the socket to the listener sets for select().
+        FD_SET(serversockets[i].listenSocket, &masterSet);
+        if (maxFd <= serversockets[i].listenSocket) {
+            maxFd = serversockets[i].listenSocket + 1;
+        }
+        log_logMessage(LOGLEVEL_INFO, 
+                       "Multi-port server listening on port %d with socket #%d",
+                       serversockets[i].port, i);
+    } // for i
+
+
+    while (0 == errorOccurred) {
+        struct timeval timeout;
+        unsigned i;
+        int nrSelectEvents;
+        fd_set readSet, writeSet, errorSet;
+
+
+        // Re-initialize because they may be changed by select()
+        memcpy(&readSet, &masterSet, sizeof(masterSet));
+        memcpy(&writeSet, &masterSet, sizeof(masterSet));
+        memcpy(&errorSet, &masterSet, sizeof(masterSet));
+
+        // Re-initialize timeout on every call because some implementations
+        // of select() modify it.
+        if (NULL != pTimeout) {
+            timeout.tv_sec = pTimeout->tv_sec;
+            timeout.tv_usec = pTimeout->tv_usec;
+        } else {
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 1000;
+        }
+
+        // Use select() to wait until something interesting occurs.
+        nrSelectEvents = select(maxFd, &readSet, NULL /*&writeSet*/, &errorSet, &timeout);
+        if (0 == nrSelectEvents) {
+//            log_logMessage(LOGLEVEL_DEBUG1, "timeout in select()");
+            continue;
+        }
+        if (nrSelectEvents < 0) {
+            tcp_log_error("tcp_server_multiport(): select failed");
+            errorOccurred = -5;
+            break;
+        }
+
+        // Now try to figure out which socket it was.
+        for (i = 0;(i < nrOfSockets) && (nrSelectEvents > 0);i ++) {
+            // Was it a listener socket?
+            if (0 != FD_ISSET(serversockets[i].listenSocket, &readSet)) {
+                nrSelectEvents--;
+                // Accept the connection.
+                log_logMessage(LOGLEVEL_DEBUG1,
+                    "tcp_server_multiport(): server socket #%d received connection attempt.",
+                    i);
+                serversockets[i].clientSize = sizeof(serversockets[i].client);
+                serversockets[i].clientSocket = accept(serversockets[i].listenSocket,
+                                                       (struct sockaddr *) &serversockets[i].client,
+                                                       &serversockets[i].clientSize);
+                if (INVALID_SOCKET == serversockets[i].clientSocket) {
+                    tcp_log_error("tcp_server_multiport(): accept() failed");
+                    errorOccurred = -6;
+                    break;
+                }
+                log_logMessage(LOGLEVEL_DEBUG1,
+                               "tcp_server_multiport(): accepted connection from %s:%d",
+                               inet_ntoa(serversockets[i].client.sin_addr),
+                               ntohs(serversockets[i].client.sin_port));
+
+                // Try to set non-blocking mode.
+                if (!tcp_set_socket_nonblocking(serversockets[i].clientSocket)) {
+                    tcp_log_error("tcp_server_multiport(): setting non-blocking mode failed");
+                    errorOccurred = -7;
+                }
+
+                // Add socket to sets.
+                FD_SET(serversockets[i].clientSocket, &masterSet);
+                if (maxFd <= serversockets[i].clientSocket) {
+                    maxFd = serversockets[i].clientSocket + 1;
+                 }
+
+                 if (NULL != serversockets[i].pFctConnect) {
+                    if (serversockets[i].pFctConnect(serversockets[i].clientSocket,
+                                                     &serversockets[i].client)) {
+                        log_logMessage(LOGLEVEL_DEBUG1, "tcp_server_multiport(): callback failed.");
+                    }
+                 }
+            } // if listenSocket read
+
+            if (0 != FD_ISSET(serversockets[i].clientSocket, &readSet)) {
+                nrSelectEvents--;
+                log_logMessage(LOGLEVEL_DEBUG1,
+                               "tcp_server_multiport(): client socket #%d became readable.",
+                               i);
+                if (serversockets[i].pFctReceive(serversockets[i].clientSocket,
+                                                 &serversockets[i].client)) {
+                    log_logMessage(LOGLEVEL_DEBUG1, "tcp_server_multiport(): close client connection.");
+                    FD_CLR(serversockets[i].clientSocket, &masterSet);
+                    closesocket(serversockets[i].clientSocket);
+                    if (NULL != serversockets[i].pFctDisconnect) {
+                        serversockets[i].pFctDisconnect(serversockets[i].clientSocket, NULL);
+                    }
+                    serversockets[i].clientSocket = INVALID_SOCKET;
+                }
+            } // if clientSocket read
+
+            if (0 != FD_ISSET(serversockets[i].listenSocket, &errorSet)) {
+                int err = 0;
+                socklen_t errlen = sizeof(err);
+
+                nrSelectEvents--;
+                if (getsockopt(serversockets[i].listenSocket,
+                               SOL_SOCKET, SO_ERROR,
+                               (char *) &err, &errlen) < 0) {
+                    tcp_log_error("tcp_server_multiport(): getsockopt() failed");
+                    errorOccurred = -8;
+                }
+                log_logMessage(LOGLEVEL_ERROR,
+                               "tcp_server_multiport(): error on server socket: %s",
+                               strerror(err));
+                closesocket(serversockets[i].listenSocket);
+                serversockets[i].listenSocket = INVALID_SOCKET;
+            } // if listenSocket error
+
+            if (0 != FD_ISSET(serversockets[i].clientSocket, &errorSet)) {
+                int err = 0;
+                socklen_t errlen = sizeof(err);
+
+                nrSelectEvents--;
+                if (getsockopt(serversockets[i].clientSocket,
+                               SOL_SOCKET, SO_ERROR,
+                               (char *) &err, &errlen) < 0) {
+                    tcp_log_error("tcp_server_multiport(): getsockopt() failed");
+                    errorOccurred = -9;
+                }
+                if (err > 0) {
+                    log_logMessage(LOGLEVEL_ERROR,
+                        "tcp_server_multiport(): error on client socket #%d: %s",
+                        i, strerror(err));
+                } else {
+                    log_logMessage(LOGLEVEL_INFO,
+                        "tcp_server_multiport() connection on socket #%d closed.",
+                        i);
+                }
+                FD_CLR(serversockets[i].clientSocket, &masterSet);
+                closesocket(serversockets[i].clientSocket);
+                if (NULL != serversockets[i].pFctDisconnect) {
+                    serversockets[i].pFctDisconnect(serversockets[i].clientSocket, NULL);
+                }
+                serversockets[i].clientSocket = INVALID_SOCKET;
+            } // if clientSocket error
+        } // for i
+    } // while !errorOccurred
+
+
+    // Close all open sockets to free used resources.
+    for (i = 0;i < nrOfSockets;i ++) {
+        if (0 != serversockets[i].clientSocket) {
+            closesocket(serversockets[i].clientSocket);
+            if (NULL != serversockets[i].pFctDisconnect) {
+                serversockets[i].pFctDisconnect(serversockets[i].clientSocket,
+                                                NULL);
+            }
+        }
+        if (0 != serversockets[i].listenSocket) {
+            closesocket(serversockets[i].listenSocket);
+        }
+    } // for i
+
+    return errorOccurred;
+} // tcp_server_multiport()
+
+
+
+#ifdef TCPTEST
 /** A simple server function that sends all received data back to the client.
 
    @param theSocket The socket to use for communications.
@@ -484,12 +951,57 @@ bool echoserver(int theSocket, struct sockaddr_in *from) {
 } // echoserver()
 
 
-#ifdef _WIN32
-int port = 10250;
+
+bool multiechoserver(int theSocket,  struct sockaddr_in *from) {
+    char rxTxBuffer[1024];
+    int numRxBytes;
+
+
+    log_logMessage(LOGLEVEL_DEBUG1,
+                   "multiechoserver(%d): Serving %s:%d",
+                   theSocket,
+                   inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+
+    numRxBytes = recv(theSocket, rxTxBuffer, sizeof(rxTxBuffer), 0);
+    if (numRxBytes > 0) {
+        rxTxBuffer[numRxBytes] = '\0';
+        log_logMessage(LOGLEVEL_INFO,
+                       "multiechoserver(%d): %s:%d -> '%s'",
+                       theSocket,
+                       inet_ntoa(from->sin_addr), ntohs(from->sin_port),
+                       rxTxBuffer);
+        rxTxBuffer[0] = '+';
+        if (send(theSocket, rxTxBuffer, numRxBytes, 0) != numRxBytes) {
+            log_logMessage(LOGLEVEL_ERROR,
+                           "multiechoserver(%d): send() failed to %s:%d: %s",
+                           theSocket,
+                           inet_ntoa(from->sin_addr), ntohs(from->sin_port),
+                           strerror(errno));
+        } else {
+            log_logMessage(LOGLEVEL_INFO,
+                           "multiechoserver(%d): %s:%d <- '%s'",
+                           theSocket,
+                           inet_ntoa(from->sin_addr), ntohs(from->sin_port),
+                           rxTxBuffer);
+        } // send() ok
+    } else {
+        log_logMessage(LOGLEVEL_INFO,
+                       "multiechoserver(%d): Disconnected from %s:%d",
+                       theSocket,
+                       inet_ntoa(from->sin_addr), ntohs(from->sin_port));
+        return true;
+    }
+
+    return false;
+} // multiechoserver()
+
+
+
+static int port = 10255;
 
 void spawnEchoServer(void) {
- 
     // This is the child process, which we use for the server.
+    printf("spawnEchoServer started\n");
     if (tcp_server(port, echoserver, false) < 0) {
         perror("Error in server: ");
         _endthreadex((unsigned)-1L);
@@ -500,15 +1012,42 @@ void spawnEchoServer(void) {
 
 
 
+void spawnMultiEchoServer(void) {
+    serversocket_t serversockets[2];
+
+
+    // This is the child process, which we use for the server.
+    printf("spawnMultiEchoServer started on port %d\n", port);
+    memset(serversockets, 0, sizeof(serversockets));
+    serversockets[0].port = port + 1;
+    serversockets[0].pServerFunction = &multiechoserver;
+    serversockets[1].port = port + 2;
+    serversockets[1].pServerFunction = &multiechoserver;
+
+    // This is the child process, which we use for the server.
+    if (tcp_server_multiport(2, serversockets, NULL) < 0) {
+        perror("Error in multiport server: ");
+        _endthreadex((unsigned)-1L);
+    }
+    printf("spawnMultiEchoServer terminating\n");
+    _endthreadex(0);
+} // spawnMultiEchoServer()
+
+
+
 /** Test program to perform a simple walkthrough of all functions in the
    module.
  */
 int main(int argc, char *argv[]) {
     char sendBuffer[1024], receiveBuffer[1024];
-    int clientSocket;
+    int clientSocket, cs1, cs2;
     ssize_t receiveLength;
+#ifdef _WIN32
     uintptr_t serverThread;
- 
+#else
+    pid_t serverThread;
+#endif // !_WIN32
+
 
     if (argc > 1) {
         port = (int) strtol(argv[1], NULL, 0);
@@ -518,34 +1057,50 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    log_setStdoutLevel(LOGLEVEL_DEBUG1);
     printf("Using localhost:%d for server.\n", port);
     if (0 != tcp_init()) {
         perror("Unable to initialize TCP/IP subsystem.");
         exit(-1);
     }
 
+#if 0
+   //
+   // Test single-port server.
+   //
+#ifdef _WIN32
     serverThread = _beginthread(spawnEchoServer, 0, NULL );
     if (0 == serverThread) {
         perror("_beginthread() failed.");
         exit(-1);
     }
+#else
+    if ((serverThread = fork()) == 0) {
+        // This is the child process, which we use for the server.
+        spawnEchoServer();
+        // Won't return.
+    }
+#endif // !_WIN32
 
     // This is the parent process, which we use for the client.
-    clientSocket = tcp_client_connect("localhost", port);
+    // Allow a little time to get the server running.
+    sleep(1);
 
+    clientSocket = tcp_client_connect("localhost", port);
     if (clientSocket < 0) {
         perror("Error while creating client socket: ");
         exit(clientSocket);
     }
 
-    _snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "Teststring");
+
+    snprintf(sendBuffer, sizeof(sendBuffer), "Teststring");
     receiveLength = tcp_send_and_receive(clientSocket,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
     receiveBuffer[receiveLength] = '\0';
-    printf("<- '%s'\n", receiveBuffer);
+    printf("clientSocket <- '%s'\n", receiveBuffer);
 
-    _snprintf_s(sendBuffer, sizeof(sendBuffer), sizeof(sendBuffer), "A much longer string that will serve as the test string.");
+    snprintf(sendBuffer, sizeof(sendBuffer), "A much longer string that will serve as the test string.");
     receiveLength = tcp_send_and_receive(clientSocket,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
@@ -553,8 +1108,65 @@ int main(int argc, char *argv[]) {
     printf("<- '%s'\n", receiveBuffer);
 
     tcp_close(clientSocket);
+#endif // 0
 
+
+    //
+    // Test multi-port server.
+    //
+#ifdef _WIN32
+    serverThread = _beginthread(spawnMultiEchoServer, 0, NULL);
+    if (0 == serverThread) {
+        perror("_beginthread() failed.");
+        exit(-1);
+    }
+#else
+    if ((serverThread = fork()) == 0) {
+        // This is the child process, which we use for the server.
+        spawnMultiEchoServer();
+        return 0;
+    }
+#endif // !_WIN32
+
+    // This is the parent process, which we use for the client.
+    // Allow a little time to get the server running.
+    sleep(10);
+
+    cs1 = tcp_client_connect("localhost", port + 1);
+    if (cs1 < 0) {
+        perror("Error while creating client socket 1: ");
+        exit(cs1);
+    }
+    sleep(1);
+    cs2 = tcp_client_connect("localhost", port + 2);
+    if (cs2 < 0) {
+        perror("Error while creating client socket 2: ");
+        exit(cs2);
+    }
+
+
+    snprintf(sendBuffer, sizeof(sendBuffer), "Test string for cs1");
+    log_logMessage(LOGLEVEL_INFO, "cs1 -> '%s'\n", sendBuffer);
+    receiveLength = tcp_send_and_receive(cs1,
+                        sendBuffer, strlen(sendBuffer),
+                        receiveBuffer, sizeof(receiveBuffer));
+    receiveBuffer[receiveLength] = '\0';
+    log_logMessage(LOGLEVEL_INFO, "cs1 <- '%s'", receiveBuffer);
+
+    // Give it some more time.
+    sleep(2);
+    snprintf(sendBuffer, sizeof(sendBuffer), "Test string for cs2.");
+    log_logMessage(LOGLEVEL_INFO, "cs2 -> '%s'", sendBuffer);
+    receiveLength = tcp_send_and_receive(cs2,
+                        sendBuffer, strlen(sendBuffer),
+                        receiveBuffer, sizeof(receiveBuffer));
+    receiveBuffer[receiveLength] = '\0';
+    log_logMessage(LOGLEVEL_INFO, "cs2 <- '%s'", receiveBuffer);
+
+    tcp_close(cs2);
+    tcp_close(cs1);
+
+    log_logMessage(LOGLEVEL_WARNING, "terminating main()");
     exit(0);
 } // main()
-#endif // TEST
-#endif // _WIN32
+#endif // TCPTEST
