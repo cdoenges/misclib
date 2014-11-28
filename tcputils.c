@@ -96,7 +96,6 @@
 #include <sys/types.h>
 
 #include "logging.h"
-#include "static_assert.h"
 #include "tcputils.h"
 
 
@@ -111,31 +110,14 @@
  */
 #define FTR_TCP_LOG_CONTENT
 
-/** If defined, uses a global buffer to prepare the content to log.
-   If not defined, a local buffer (on the stack) will be used.
- */
-//#define FTR_TCP_LC_GLOBAL_BUFFER
-
-/** The size in bytes of the buffer used to prepare the content log. */
-#define FTR_TCP_LC_BUFFER_SIZE 4096u
-
 /** The number of data bytes per line to log. MUST be small enough to fit
    into FTR_TCP_LC_BUFFER_SIZE. */
 #define FTR_TCP_LC_LINE_WIDTH 0x10
 
-static_assert(FTR_TCP_LC_BUFFER_SIZE >= (FTR_TCP_LC_LINE_WIDTH * 3 + 1));
-
-
 
 #ifdef FTR_TCP_LOG_CONTENT
-#include "hex.h"
-
 /** Enables content logging if true, disables if false. */
 static bool logContentEnabled = true;
-
-#ifdef FTR_TCP_LC_GLOBAL_BUFFER
-static char debugBuffer[FTR_TCP_LC_BUFFER_SIZE];
-#endif // FTR_TCP_LC_GLOBAL_BUFFER
 #endif // FTR_TCP_LOG_CONTENT
 
 
@@ -225,51 +207,13 @@ static void tcp_log_error(char const *message) {
 } // tcp_log_error()
 
 
-
+#ifdef FTR_TCP_LOG_CONTENT
 void tcp_log_data(char const *pData, size_t nrOfBytes, char const *prefix) {
-#ifndef FTR_TCP_LC_GLOBAL_BUFFER
-    static char debugBuffer[FTR_TCP_LC_BUFFER_SIZE];
-#endif // FTR_TCP_LC_GLOBAL_BUFFER
-    bool firstLine = true;
-
-
-    assert(strlen(prefix) == 8);
-
-    // Special handling for no data.
-    if (0 == nrOfBytes) {
-        log_logMessage(LOGLEVEL_DEBUG2, "%s (None)", prefix);
-        return;
+    if (logContentEnabled) {
+        log_logData(LOGLEVEL_DEBUG2, pData, nrOfBytes, prefix, FTR_TCP_LC_LINE_WIDTH);
     }
-
-    while (nrOfBytes > 0) {
-        // Calculate the most bytes that will fit into the buffer.
-        size_t chunkSize = FTR_TCP_LC_LINE_WIDTH;
-
-        if (nrOfBytes < chunkSize) {
-            chunkSize = nrOfBytes;
-        }
-
-        if (hexbuf2String(pData, chunkSize,
-                          debugBuffer, sizeof(debugBuffer),
-                          USE_CRLF, false,          // CRLF, no ASCII
-                          FTR_TCP_LC_LINE_WIDTH,    // linewidth
-                          false, 0)                 // show no offset, offset = 0
-             == NULL) {
-                log_logMessage(LOGLEVEL_ERROR, "tcp_log_data(): unable to hexify buffer");
-                return;
-        }
-        if (firstLine) {
-            log_logMessage(LOGLEVEL_DEBUG2, "%s %s", prefix, debugBuffer);
-            firstLine = false;
-        } else {
-            log_logMessage(LOGLEVEL_DEBUG2, "         %s", prefix, debugBuffer);
-        }
-
-        nrOfBytes = nrOfBytes - chunkSize;
-        pData = pData + chunkSize;
-    } // while nrOfBytes > 0
 } // tcp_log_data()
-
+#endif // FTR_TCP_LOG_CONTENT
 
 
 bool tcp_set_socket_nonblocking(int theSocket) {
@@ -397,9 +341,7 @@ ssize_t tcp_receive(int theSocket, char *pRxBuffer, size_t rxSize) {
     }
 
 #ifdef FTR_TCP_LOG_CONTENT
-    if (logContentEnabled) {
-        tcp_log_data(pRxBuffer, rs, "<--[tcp]");
-    }
+    tcp_log_data(pRxBuffer, rs, "<--[tcp]");
 #endif // FTR_TCP_LOG_CONTENT
 
     if (0 == rs) {
@@ -439,9 +381,7 @@ ssize_t tcp_recv_with_timeout(int theSocket,
       // Receive with timeout.
       rs = recv(theSocket, pRxBuffer, rxSize, 0);
 #ifdef FTR_TCP_LOG_CONTENT
-      if (logContentEnabled) {
-          tcp_log_data(pRxBuffer, rs, "<--[tcp]");
-      }
+      tcp_log_data(pRxBuffer, rs, "<--[tcp]");
 #endif // FTR_TCP_LOG_CONTENT
 
      tcp_set_socket_blocking(theSocket);
@@ -461,9 +401,7 @@ int tcp_send(int theSocket, char const *pTxBuffer, size_t txSize) {
     }
 
 #ifdef FTR_TCP_LOG_CONTENT
-    if (logContentEnabled) {
-        tcp_log_data(pTxBuffer, txSize, "[tcp]-->");
-    }
+    tcp_log_data(pTxBuffer, txSize, "[tcp]-->");
 #endif // FTR_TCP_LOG_CONTENT
 
     return 0;
@@ -674,8 +612,8 @@ int tcp_server_multiport(unsigned nrOfSockets,
         log_logMessageContinue(LOGLEVEL_DEBUG1, "{ %d, @0x%p, @0x%p, @0x%p }",
                                serversockets[i].port,
                                serversockets[i].pFctConnect,
-							   serversockets[i].pFctReceive,
-							   serversockets[i].pFctDisconnect);
+                               serversockets[i].pFctReceive,
+                               serversockets[i].pFctDisconnect);
         if (i > 1) {
             log_logMessageContinue(LOGLEVEL_DEBUG1, ", ");
         }

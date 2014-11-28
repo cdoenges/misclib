@@ -128,17 +128,6 @@ typedef struct {
 
 
 
-/** Logs the given data using loglevel LOGLEVEL_DEBUG2.
-
-   @param pData The data that will be logged.
-   @param nrOfBytes The number of data bytes to log. May be split into
-    multiple lines of output.
-   @param prefix A string of exactly 8 characters that will prefix the first
-    line of output.
-*/
-extern void tcp_log_data(char const *pData, size_t nrOfBytes, char const *prefix);
-
-
 /** Set the socket into non-blocking mode.
 
     @param theSocket The filedescriptor of the socket to change.
