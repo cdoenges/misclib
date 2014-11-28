@@ -62,7 +62,18 @@
 #endif // !_WIN32
 #include "logging.h"
 
+#define FTR_LOG_GLOBAL_BUFFER
+#define FTR_LOG_BUFFER_SIZE 4096
 
+#ifdef _WIN32
+#define USE_CRLF true
+#else
+#define USE_CRLF false
+#endif // !_WIN32
+
+#ifdef FTR_LOG_GLOBAL_BUFFER
+static char debugBuffer[FTR_LOG_BUFFER_SIZE];
+#endif // FTR_LOG_GLOBAL_BUFFER
 
 /** The file handle of the logfile to use or NULL if no file is currently in use. */
 static FILE *logFileHandle = NULL;
@@ -180,13 +191,10 @@ void log_logMessageContinue(log_level_t level, char const *format, ...) {
 } // log_logMessageContinue()
 
 
-
-void log_logVMessageStart(log_level_t level, char const *format, va_list arglist) {
+void log_logLevelStart(log_level_t level) {
     char const *prepend_string;
 
-
     assert((level > LOGLEVEL_NONE) && (level <= LOGLEVEL_ALWAYS));
-    assert(NULL != format);
 
     // Note: this could be made more efficient using table-lookup in a 
     // string table. The switch/case has the advantage of causing a run-time
@@ -221,11 +229,17 @@ void log_logVMessageStart(log_level_t level, char const *format, va_list arglist
             break;
         case LOGLEVEL_NONE:
         default:
-            //-e{224,225} Constant value boolean used intentionally.
             assert(false);
     } // switch (level)
-    log_logMessageContinue(level, prepend_string);
+    log_logMessageContinue(level, prepend_string);    
+} // log_logLevelStart()
 
+
+void log_logVMessageStart(log_level_t level, char const *format, va_list arglist) {
+    assert((level > LOGLEVEL_NONE) && (level <= LOGLEVEL_ALWAYS));
+    assert(NULL != format);
+
+    log_logLevelStart(level);
     log_logVMessageContinue(level, format, arglist);
 } // log_logVMessageStart()
 
@@ -253,3 +267,65 @@ void log_logMessage(log_level_t level, char const *format, ...) {
     log_logMessageContinue(level, "\n");
 } // log_logMessage()
 
+
+
+void log_logData(log_level_t level,
+                        char const *pData,
+                        size_t nrOfBytes,
+                        char const *prefixStr,
+                        size_t hexWidth) {
+#ifndef FTR_LOG_GLOBAL_BUFFER
+    static char debugBuffer[FTR_LOG_BUFFER_SIZE];
+#endif // !FTR_LOG_GLOBAL_BUFFER
+    bool firstLine = true;
+    unsigned prefixLen, i;
+
+
+    assert((level > LOGLEVEL_NONE) && (level <= LOGLEVEL_ALWAYS));
+    assert(NULL != pData);
+    assert(NULL != prefixStr);
+    assert(hexWidth*3 + 3 < sizeof(debugBuffer));
+
+    // Special handling for no data.
+    if (0 == nrOfBytes) {
+        log_logMessage(level, "%s (None)", prefixStr);
+        return;
+    }
+
+    prefixLen = strlen(prefixStr);
+
+    while (nrOfBytes > 0) {
+        // Calculate the most bytes that will fit into the buffer.
+        size_t chunkSize = hexWidth;
+
+        if (nrOfBytes < chunkSize) {
+            chunkSize = nrOfBytes;
+        }
+
+        if (hexbuf2String(pData, chunkSize,
+                          debugBuffer, sizeof(debugBuffer),
+                          USE_CRLF, false,          // CRLF, no ASCII
+                          hexWidth,                 // linewidth
+                          false, 0)                 // show no offset, offset = 0
+             == NULL) {
+                log_logMessage(LOGLEVEL_ERROR,
+                               "tcp_log_data(): unable to hexify buffer");
+                return;
+        }
+        // Remove the trailing CRLF because log_logMessage() will append it again.
+        debugBuffer[strlen(debugBuffer) - 2] = '\0';
+        if (firstLine) {
+            log_logMessage(level, "%s %s", prefixStr, debugBuffer);
+            firstLine = false;
+        } else {
+            log_logLevelStart(level);
+            for (i = prefixLen;i > 0;i ++) {
+                log_logMessageContinue(level, " ");
+            }
+            log_logMessageContinue(level, debugBuffer);
+        }
+
+        nrOfBytes = nrOfBytes - chunkSize;
+        pData = pData + chunkSize;
+    } // while nrOfBytes > 0
+} // log_logData()

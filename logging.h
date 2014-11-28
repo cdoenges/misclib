@@ -26,7 +26,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -208,7 +208,14 @@ extern void log_setStdoutSupression(bool suppress);
  * @param ... A list of parameters as used by @see printf
  */
 #ifdef FTR_EMBEDDED
+#ifdef __C251__
+// C251 5.56 (and earlier):
+// Variadic macros—macros which allow variable length argument lists—are not
+// supported in this release. 
+#define log_logMessage()
+#else
 #define log_logMessage(l, f, ...)
+#endif // !__C251__
 #else
 extern void log_logMessage(log_level_t level, char const *format, ...);
 #endif // !FTR_EMBEDDED
@@ -227,7 +234,14 @@ extern void log_logMessage(log_level_t level, char const *format, ...);
  * @param ... A list of parameters as used by @see printf
  */
 #ifdef FTR_EMBEDDED
+#ifdef __C251__
+// C251 5.56 (and earlier):
+// Variadic macros—macros which allow variable length argument lists—are not
+// supported in this release. 
+#define log_logMessageStart()
+#else
 #define log_logMessageStart(l, f, ...)
+#endif // !__C251__
 #else
 extern void log_logMessageStart(log_level_t level, char const *format, ...);
 #endif // !FTR_EMBEDDED
@@ -268,7 +282,14 @@ extern void log_logVMessageStart(log_level_t level, char const *format, va_list 
  * @param ... A list of parameters as used by @see printf
  */
 #ifdef FTR_EMBEDDED
+#ifdef __C251__
+// C251 5.56 (and earlier):
+// Variadic macros—macros which allow variable length argument lists—are not
+// supported in this release. 
+#define log_logMessageContinue()
+#else
 #define log_logMessageContinue(l, f, ...)
+#endif // !__C251__
 #else
 extern void log_logMessageContinue(log_level_t level, char const *format, ...);
 #endif // !FTR_EMBEDDED
@@ -295,3 +316,21 @@ extern void log_logMessageContinue(log_level_t level, char const *format, ...);
 extern void log_logVMessageContinue(log_level_t level, char const *format, va_list arglist);
 #endif // !FTR_EMBEDDED
 #endif // LOGGING_H
+
+
+
+/** Logs the given data using loglevel LOGLEVEL_DEBUG2.
+ *
+ * @param level The level of the message.
+ * @param pData The data that will be logged.
+ * @param nrOfBytes The number of data bytes to log. May be split into
+ *      multiple lines of output.
+ * @param prefixStr A string of exactly 8 characters that will prefix the
+ *      first line of output.
+ * @param hexWidth The number of hex bytes to output per line.
+ */
+extern void log_logData(log_level_t level,
+                        char const *pData,
+                        size_t nrOfBytes,
+                        char const *prefixStr,
+                        size_t hexWidth);
