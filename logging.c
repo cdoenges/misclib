@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,7 @@
 #else
 #include <sys/errno.h>
 #endif // !_WIN32
+#include "hex.h"
 #include "logging.h"
 
 #define FTR_LOG_GLOBAL_BUFFER
@@ -118,7 +119,7 @@ bool log_closeLogfile(void) {
 
     if (fclose(logFileHandle) != 0) {
         logFileHandle = NULL;
-        log_logMessage(LOGLEVEL_ERROR, 
+        log_logMessage(LOGLEVEL_ERROR,
                        "Unable to close logfile: %s",
                        strerror(errno));
         return true;
@@ -196,7 +197,7 @@ void log_logLevelStart(log_level_t level) {
 
     assert((level > LOGLEVEL_NONE) && (level <= LOGLEVEL_ALWAYS));
 
-    // Note: this could be made more efficient using table-lookup in a 
+    // Note: this could be made more efficient using table-lookup in a
     // string table. The switch/case has the advantage of causing a run-time
     // error if the strings and log_level_t get out of sync.
     switch (level) {
@@ -231,7 +232,7 @@ void log_logLevelStart(log_level_t level) {
         default:
             assert(false);
     } // switch (level)
-    log_logMessageContinue(level, prepend_string);    
+    log_logMessageContinue(level, prepend_string);
 } // log_logLevelStart()
 
 
@@ -319,10 +320,11 @@ void log_logData(log_level_t level,
             firstLine = false;
         } else {
             log_logLevelStart(level);
-            for (i = prefixLen;i > 0;i ++) {
+            for (i = prefixLen + 1;i > 0;i ++) {
                 log_logMessageContinue(level, " ");
             }
             log_logMessageContinue(level, debugBuffer);
+            log_logMessageContinue(level, "\n");
         }
 
         nrOfBytes = nrOfBytes - chunkSize;
