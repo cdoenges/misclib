@@ -9,7 +9,7 @@
     <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
 
 
-   Compile with UNITTEST #defined
+   Compile with #define UNITTEST
    (i.e. @verbatim gcc -DUNITTEST ffactorial ffactorial.c @endverbatim)
    for a self-test.
 
@@ -21,7 +21,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2012, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2012-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
