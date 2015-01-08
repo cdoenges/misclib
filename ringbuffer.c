@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011-2014, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2011-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@
 
 
     This module was inspired by Jack Ganssle's Embedded Muse #110
-    http://www.ganssle.com/tem/tem110.pdf. Thank you Jack and 
+    http://www.ganssle.com/tem/tem110.pdf. Thank you Jack, Phil, and Keil!
 
  */
 
