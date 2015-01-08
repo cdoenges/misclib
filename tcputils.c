@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011-2014, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2011-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -152,17 +152,17 @@ static WSADATA wsaData;
         next call to this function. If you need to preserve the error message,
         copy the string to a buffer you control.
  */
-static char const *winsock_strerror(void) {
+static char const *winsock_strerror(int errorCode) {
     WCHAR wtext[1024];
     static char ctext[1024];
     size_t csize;
-    int error = WSAGetLastError();  // Obtain the last WinSock error code.
+
 
     // Convert to a wide string representation.
     //lint -e{64} Lint does not like argument 5.
     (void) FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                   NULL,
-                  (DWORD) error,
+                  (DWORD) errorCode,
                   0,
                   (LPWSTR) wtext,
                   sizeof(wtext),
@@ -195,16 +195,131 @@ static char const *winsock_strerror(void) {
  */
 static void tcp_log_error(char const *message) {
 #ifdef _WIN32
+    int errorCode = WSAGetLastError();  // Obtain the last WinSock error code.
+    int level = LOGLEVEL_ERROR;
+    char const *errorStr = "???";
+
+    switch (errorCode) {
+        case WSA_INVALID_HANDLE:
+            errorStr = "WSA_INVALID_HANDLE";
+            break;
+
+        case WSA_NOT_ENOUGH_MEMORY:
+            errorStr = "WSA_NOT_ENOUGH_MEMORY";
+            break;
+
+        case WSA_INVALID_PARAMETER:
+            errorStr = "WSA_INVALID_PARAMETER";
+            break;
+
+        case WSA_OPERATION_ABORTED:
+            errorStr = "WSA_OPERATION_ABORTED";
+            break;
+
+        case WSA_IO_INCOMPLETE:
+            errorStr = "WSA_IO_INCOMPLETE";
+            break;
+
+        case WSA_IO_PENDING:
+            errorStr = "WSA_IO_PENDING";
+            break;
+
+        case WSAEINTR:
+            errorStr = "WSAEINTR";
+            break;
+
+        case WSAEBADF:
+            errorStr = "WSAEBADF";
+            break;
+
+        case WSAEACCES:
+            errorStr = "WSAEACCES";
+            break;
+
+        case WSAEFAULT:
+            errorStr = "WSAEFAULT";
+            break;
+
+        case WSAEINVAL:
+            errorStr = "WSAEINVAL";
+            break;
+
+        case WSAEMFILE:
+            errorStr = "WSAEMFILE";
+            break;
+
+        case WSAEWOULDBLOCK:
+            level = LOGLEVEL_INFO;
+            errorStr = "WSAEWOULDBLOCK";
+            break;
+
+        case WSAEINPROGRESS:
+            errorStr = "WSAEINPROGRESS ";
+            break;
+
+        case WSAEALREADY:
+            errorStr = "WSAEALREADY";
+            break;
+
+        case WSAENOTSOCK:
+            errorStr = "WSAENOTSOCK";
+            break;
+
+        case WSAECONNABORTED:
+            errorStr = "WSAECONNABORTED";
+            break;
+
+        case WSAEDESTADDRREQ:
+            errorStr = "WSAEDESTADDRREQ";
+            break;
+
+        case WSAEMSGSIZE:
+            errorStr = "WSAEMSGSIZE";
+            break;
+
+        case WSAEPROTOTYPE:
+            errorStr = "WSAEPROTOTYPE";
+            break;
+
+        case WSAENOPROTOOPT:
+            errorStr = "WSAENOPROTOOPT";
+            break;
+
+        case WSAEPROTONOSUPPORT:
+            errorStr = "WSAEPROTONOSUPPORT";
+            break;
+
+        case WSAESOCKTNOSUPPORT:
+            errorStr = "WSAESOCKTNOSUPPORT";
+            break;
+
+        case WSAEOPNOTSUPP:
+            errorStr = "WSAEOPNOTSUPP";
+            break;
+
+        case WSAEPFNOSUPPORT:
+            errorStr = "WSAEPFNOSUPPORT";
+            break;
+
+        case WSAEADDRINUSE:
+            errorStr = "WSAEADDRINUSE";
+            break;
+
+        default:
+            break;
+    } // switch errorCode
+
     // Windows nicely formats error messages by appending a period.
-    log_logMessage(LOGLEVEL_ERROR, "%s: %s",
-                   message,
-                   winsock_strerror());
+    log_logMessage(level, "%s: %s(%d) - %s",
+                   message, errorStr, errorCode,
+                   winsock_strerror(errorCode));
 #else // POSIX
     log_logMessage(LOGLEVEL_ERROR, "%s: %s.",
                    message,
                    strerror(errno));
 #endif // POSIX
 } // tcp_log_error()
+
 
 
 #ifdef FTR_TCP_LOG_CONTENT
@@ -214,6 +329,7 @@ void tcp_log_data(char const *pData, size_t nrOfBytes, char const *prefix) {
     }
 } // tcp_log_data()
 #endif // FTR_TCP_LOG_CONTENT
+
 
 
 bool tcp_set_socket_nonblocking(int theSocket) {
@@ -355,7 +471,7 @@ ssize_t tcp_receive(int theSocket, char *pRxBuffer, size_t rxSize) {
 
 
 
-ssize_t tcp_recv_with_timeout(int theSocket, 
+ssize_t tcp_recv_with_timeout(int theSocket,
                               char *pRxBuffer, size_t rxSize,
                               unsigned timeout_ms) {
    fd_set readset;
@@ -365,7 +481,7 @@ ssize_t tcp_recv_with_timeout(int theSocket,
    // Initialize the set
    FD_ZERO(&readset);
    FD_SET(theSocket, &readset);
-   
+
    // Configure the timeout for the socket.
    tv.tv_sec = 0;
    tv.tv_usec = timeout_ms * 1000;
@@ -533,20 +649,20 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     server.sin_port = htons(port);
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         // An error occurred, errno will specify the reason.
-        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): socket() failed: %s", strerror(errno));
+        tcp_log_error("tcp_server(): socket() failed");
         return -1;
     }
 
     if (bind(sd, (struct sockaddr *) &server, sizeof(server)) != 0) {
         // Binding to the socket failed.
-        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): bind() failed: %s", strerror(errno));
+    tcp_log_error("tcp_server(): bind() failed");
         (void) closesocket(sd);
         return -2;
     }
 
     if (listen(sd, 4) != 0) {
         // Listening failed.
-        log_logMessage(LOGLEVEL_ERROR, "tcp_server(): listen() failed: %s", strerror(errno));
+    tcp_log_error("tcp_server(): listen() failed");
         (void) closesocket(sd);
         return -3;
     }
@@ -559,7 +675,7 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
 
         if ((sc = accept(sd, (struct sockaddr *) &client, &clientSize)) < 0) {
             // An error occurred.
-            log_logMessage(LOGLEVEL_ERROR, "tcp_server(): accept() failed: %s", strerror(errno));
+            tcp_log_error("tcp_server(): accept() failed");
             (void) closesocket(sd);
             return -4;
         }
@@ -688,7 +804,7 @@ int tcp_server_multiport(unsigned nrOfSockets,
         if (maxFd <= serversockets[i].listenSocket) {
             maxFd = serversockets[i].listenSocket + 1;
         }
-        log_logMessage(LOGLEVEL_INFO, 
+        log_logMessage(LOGLEVEL_INFO,
                        "Multi-port server listening on port %d with socket #%d",
                        serversockets[i].port, i);
     } // for i
