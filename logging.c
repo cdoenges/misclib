@@ -320,7 +320,7 @@ void log_logData(log_level_t level,
             firstLine = false;
         } else {
             log_logLevelStart(level);
-            for (i = prefixLen + 1;i > 0;i ++) {
+            for (i = prefixLen + 1;i > 0;i --) {
                 log_logMessageContinue(level, " ");
             }
             log_logMessageContinue(level, debugBuffer);
