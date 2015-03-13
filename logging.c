@@ -119,9 +119,9 @@ bool log_closeLogfile(void) {
 
     if (fclose(logFileHandle) != 0) {
         logFileHandle = NULL;
-        log_logMessage(LOGLEVEL_ERROR,
+        log_logMessage((LOGLEVEL_ERROR,
                        "Unable to close logfile: %s",
-                       strerror(errno));
+                       strerror(errno)));
         return true;
     }
     logFileHandle = NULL;
@@ -181,7 +181,7 @@ void log_logVMessageContinue(log_level_t level, char const *format, va_list argl
 
 
 
-void log_logMessageContinue(log_level_t level, char const *format, ...) {
+void log_logMessageContinue_impl(log_level_t level, char const *format, ...) {
     //lint --e{438} args is changed by the macros.
     va_list args;
 
@@ -189,7 +189,7 @@ void log_logMessageContinue(log_level_t level, char const *format, ...) {
     va_start(args, format);
     log_logVMessageContinue(level, format, args);
     va_end(args);
-} // log_logMessageContinue()
+} // log_logMessageContinue_impl()
 
 
 void log_logLevelStart(log_level_t level) {
@@ -232,7 +232,7 @@ void log_logLevelStart(log_level_t level) {
         default:
             assert(false);
     } // switch (level)
-    log_logMessageContinue(level, prepend_string);
+    log_logMessageContinue_impl(level, prepend_string);
 } // log_logLevelStart()
 
 
@@ -246,7 +246,7 @@ void log_logVMessageStart(log_level_t level, char const *format, va_list arglist
 
 
 
-void log_logMessageStart(log_level_t level, char const *format, ...) {
+void log_logMessageStart_impl(log_level_t level, char const *format, ...) {
     //lint --e{438} args is changed by the macros.
     va_list args;
 
@@ -254,19 +254,19 @@ void log_logMessageStart(log_level_t level, char const *format, ...) {
     va_start(args, format);
     log_logVMessageStart(level, format, args);
     va_end(args);
-} // log_logMessageStart()
+} // log_logMessageStart_impl()
 
 
 
-void log_logMessage(log_level_t level, char const *format, ...) {
+void log_logMessage_impl(log_level_t level, char const *format, ...) {
     //lint --e{438} args is changed by the macros.
     va_list args;
 
     va_start(args, format);
     log_logVMessageStart(level, format, args);
     va_end(args);
-    log_logMessageContinue(level, "\n");
-} // log_logMessage()
+    log_logMessageContinue_impl(level, "\n");
+} // log_logMessage_impl()
 
 
 
@@ -289,7 +289,7 @@ void log_logData(log_level_t level,
 
     // Special handling for no data.
     if (0 == nrOfBytes) {
-        log_logMessage(level, "%s (None)", prefixStr);
+        log_logMessage((level, "%s (None)", prefixStr));
         return;
     }
 
@@ -309,22 +309,22 @@ void log_logData(log_level_t level,
                           hexWidth,                 // linewidth
                           false, 0)                 // show no offset, offset = 0
              == NULL) {
-                log_logMessage(LOGLEVEL_ERROR,
-                               "tcp_log_data(): unable to hexify buffer");
+                log_logMessage((LOGLEVEL_ERROR,
+                               "tcp_log_data(): unable to hexify buffer"));
                 return;
         }
         // Remove the trailing CRLF because log_logMessage() will append it again.
         debugBuffer[strlen(debugBuffer) - 2] = '\0';
         if (firstLine) {
-            log_logMessage(level, "%s %s", prefixStr, debugBuffer);
+            log_logMessage((level, "%s %s", prefixStr, debugBuffer));
             firstLine = false;
         } else {
             log_logLevelStart(level);
             for (i = prefixLen + 1;i > 0;i --) {
-                log_logMessageContinue(level, " ");
+                log_logMessageContinue_impl(level, " ");
             }
-            log_logMessageContinue(level, debugBuffer);
-            log_logMessageContinue(level, "\n");
+            log_logMessageContinue_impl(level, debugBuffer);
+            log_logMessageContinue_impl(level, "\n");
         }
 
         nrOfBytes = nrOfBytes - chunkSize;

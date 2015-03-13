@@ -26,7 +26,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2014, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,30 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+// If you are in a cross-platform environment where one or more of the
+// compilers does not support variadic macros, define the preprocessor symbol
+// LOGGING_API_USES_VARIADIC_MACROS to be zero. This is usually a command-line
+// option such as:
+// -DLOGGING_API_USES_VARIADIC_MACROS=0
+// If you are in an environment where all compilers support the feature, you
+// should set LOGGING_API_USES_VARIADIC_MACROS to one.
+// If you are unsure, you can try to auto-detect.
+#ifndef LOGGING_API_USES_VARIADIC_MACROS
+#if defined(__C51__) || defined(__C251__)
+    // These compilers do not support variadic macros.
+    // You should add any compiler that does not offer variadic macros.
+    #define LOGGING_API_USES_VARIADIC_MACROS 0
+#elif __STDC_VERSION__ >= 199901L
+    // All modern compilers should support variadic macros.
+    #define LOGGING_API_USES_VARIADIC_MACROS 1
+#else
+    // Unknown compiler behavior. We'll try the feature and if it does not work,
+    // add the compiler to the list of compilers where this feature is disabled.
+    #define LOGGING_API_USES_VARIADIC_MACROS 1
+#endif // unkown compiler
+#endif // !LOGGING_API_USES_VARIADIC_MACROS
+
 
 // Suppress warnings about these symbols not being used.
 //lint -esym(714, log_openLogfile, log_closeLogfile, log_setFileLevel, log_setStderrLevel, log_setStdoutLevel, log_setStdoutSupression)
@@ -203,22 +227,37 @@ extern void log_setStdoutSupression(bool suppress);
  *
  * The message is terminated with an EOL (End-Of-Line) marker (i.e. LF or CR+LF).
  *
+ * @Note
+ * Some embedded C compilers still do not support variadic macros, so we have
+ * to trick these compilers by passing all arguments as a single argument
+ * (using parenthesis) and expanding through the preprocessor.
+ *
+ * <B>Example</B>:
+ * <pre>
+ * log_logMessage((LOGLEVEL_WARNING, "Some compilers are %s", "stupid"));
+ * </pre>
+ *
  * @param level The level of the message.
  * @param format A format string as used by @see printf
  * @param ... A list of parameters as used by @see printf
  */
-#ifdef FTR_EMBEDDED
-#ifdef __C251__
-// C251 5.56 (and earlier):
-// Variadic macros—macros which allow variable length argument lists—are not
-// supported in this release. 
-#define log_logMessage()
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessage(log)
+    #else
+        #define log_logMessage(log) log_logMessage_impl log
+        extern void log_logMessage_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
+#elif 1 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessage(level, format, ...)
+    #else
+        #define log_logMessage log_logMessage_impl
+        extern void log_logMessage_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
 #else
-#define log_logMessage(l, f, ...)
-#endif // !__C251__
-#else
-extern void log_logMessage(log_level_t level, char const *format, ...);
-#endif // !FTR_EMBEDDED
+    #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
+#endif // LOGGING_API_USES_VARIADIC_MACROS
 
 
 
@@ -233,18 +272,23 @@ extern void log_logMessage(log_level_t level, char const *format, ...);
  * @param format A format string as used by @see printf
  * @param ... A list of parameters as used by @see printf
  */
-#ifdef FTR_EMBEDDED
-#ifdef __C251__
-// C251 5.56 (and earlier):
-// Variadic macros—macros which allow variable length argument lists—are not
-// supported in this release. 
-#define log_logMessageStart()
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessageStart(log)
+    #else
+        #define log_logMessageStart(log) log_logMessageStart_impl log
+        extern void log_logMessageStart_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
+#elif 1 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessageStart(level, format, ...)
+    #else
+        #define log_logMessageStart log_logMessageStart_impl
+        extern void log_logMessageStart_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
 #else
-#define log_logMessageStart(l, f, ...)
-#endif // !__C251__
-#else
-extern void log_logMessageStart(log_level_t level, char const *format, ...);
-#endif // !FTR_EMBEDDED
+    #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
+#endif // LOGGING_API_USES_VARIADIC_MACROS
 
 
 
@@ -260,9 +304,9 @@ extern void log_logMessageStart(log_level_t level, char const *format, ...);
  * @param arglist A list of parameters as used by @see vprintf
  */
 #ifdef FTR_EMBEDDED
-#define log_logVMessageStart(l, f, a)
+    #define log_logVMessageStart(l, f, a)
 #else
-extern void log_logVMessageStart(log_level_t level, char const *format, va_list arglist);
+    extern void log_logVMessageStart(log_level_t level, char const *format, va_list arglist);
 #endif // !FTR_EMBEDDED
 
 
@@ -281,18 +325,23 @@ extern void log_logVMessageStart(log_level_t level, char const *format, va_list 
  * @param format A format string as used by @see printf
  * @param ... A list of parameters as used by @see printf
  */
-#ifdef FTR_EMBEDDED
-#ifdef __C251__
-// C251 5.56 (and earlier):
-// Variadic macros—macros which allow variable length argument lists—are not
-// supported in this release. 
-#define log_logMessageContinue()
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessageContinue(log)
+    #else
+        #define log_logMessageContinue(log) log_logMessageContinue_impl log
+        extern void log_logMessageContinue_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
+#elif 1 == LOGGING_API_USES_VARIADIC_MACROS
+    #ifdef FTR_EMBEDDED
+        #define log_logMessageContinue(level, format, ...)
+    #else
+        #define log_logMessageContinue log_logMessageContinue_impl
+        extern void log_logMessageContinue_impl(log_level_t level, char const *format, ...);
+    #endif // !FTR_EMBEDDED
 #else
-#define log_logMessageContinue(l, f, ...)
-#endif // !__C251__
-#else
-extern void log_logMessageContinue(log_level_t level, char const *format, ...);
-#endif // !FTR_EMBEDDED
+    #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
+#endif // LOGGING_API_USES_VARIADIC_MACROS
 
 
 
@@ -311,11 +360,10 @@ extern void log_logMessageContinue(log_level_t level, char const *format, ...);
  * @param arglist A list of parameters as used by @see vprintf
  */
 #ifdef FTR_EMBEDDED
-#define log_logVMessageContinue(l, f, a)
+    #define log_logVMessageContinue(l, f, a)
 #else
-extern void log_logVMessageContinue(log_level_t level, char const *format, va_list arglist);
+    extern void log_logVMessageContinue(log_level_t level, char const *format, va_list arglist);
 #endif // !FTR_EMBEDDED
-#endif // LOGGING_H
 
 
 
@@ -334,3 +382,4 @@ extern void log_logData(log_level_t level,
                         size_t nrOfBytes,
                         char const *prefixStr,
                         size_t hexWidth);
+#endif // LOGGING_H
