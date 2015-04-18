@@ -68,7 +68,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +75,6 @@
 #ifndef _WIN32
 #include <fcntl.h>
 #include <netdb.h>
-#include <sys/socket.h>
 #include <unistd.h>
 #include "itoa.h" // itoa() is present only on Windows.
 #else
@@ -314,9 +312,9 @@ static void tcp_log_error(char const *message) {
                    message, errorStr, errorCode,
                    winsock_strerror(errorCode)));
 #else // POSIX
-    log_logMessage(LOGLEVEL_ERROR, "%s: %s.",
+    log_logMessage((LOGLEVEL_ERROR, "%s: %s.",
                    message,
-                   strerror(errno));
+                   strerror(errno)));
 #endif // POSIX
 } // tcp_log_error()
 

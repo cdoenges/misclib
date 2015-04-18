@@ -3,7 +3,7 @@
     A simple model is used for logging: there is a finite number of possible
     output channels, each of which uses a filter to limit what messages are
     reproduced by the channel.
-    
+
     Each message carries a level of importance from very low (DEBUG) to high
     (FATAL). If the level of the message is equal to or higher than the filter
     level, the channel reproduces the message. Otherwise the message is
@@ -20,7 +20,7 @@
 
 
     LICENSE
-    
+
     This software is open source software under the "Simplified BSD License"
     as approved by the Open Source Initiative (OSI)
     <http://opensource.org/licenses/bsd-license.php>:
@@ -110,7 +110,7 @@ typedef enum {
      * verbose program behavior is desired.
      */
     LOGLEVEL_DEBUG2,
-    /** Informational message that may be displayed to the user if 
+    /** Informational message that may be displayed to the user if
      * extremely verbose program behavior is desired.
      */
     LOGLEVEL_DEBUG1,
@@ -168,7 +168,7 @@ extern bool log_openLogfile(char const *filename, bool append);
  *
  * @return Did an error occur?
  * @retval false No error occurred.
- * @retval true And error occurred and the file could not be closed. 
+ * @retval true And error occurred and the file could not be closed.
  *    Check errno for details. The file handle will be rendered unusable,
  *    so log_openLogfile() must be called to log to a file again.
  */

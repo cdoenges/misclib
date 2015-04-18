@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2013, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -60,13 +60,13 @@
 
 
 /** Converts a 4 bit nibble to an (uppercase) hexadecimal digit. */
-#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? 'A' + (v) - 10 : '0' + (v)))
+#define nibbleToHexDigit(v) ((char) ((v) >= 10 ? (('A' + (v)) - 10) : '0' + (v)))
 
 /** Converts a 4 bit nibble to a (lowercase) hexadecimal digit. */
-#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? 'a' + (v) - 10 : '0' + (v)))
+#define nibbleToHexdigit(v) ((char) ((v) >= 10 ? (('a' + (v)) - 10) : '0' + (v)))
 
 /** Converts a hexadecimal digit to a 4 bit integer. */
-#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (n) - 'A' + 10 : (n) - 'a' + 10))
+#define hexdigitToNibble(n) ((unsigned char) ((n) - '0' < 10 ? (n) - '0' : (n) - 'A' < 6 ? (((n) - 'A') + 10) : (((n) - 'a') + 10)))
 
 
 /** Converts an integer nibble to a hexadecimal character.
@@ -172,9 +172,9 @@ extern size_t hexbuf2StringLength(size_t nrBytes,
    characters are replaced with a period (.). Each line is
    is terminated with a CR or CR+LF, depending on the useCRLF parameter.
 
-   Each line requires 
+   Each line requires
    8 + 1 + 3*lineWidth + (showASCII ? lineWidth : 0) + (useCRLF ? 2 : 1)
-   bytes of memory. There are 
+   bytes of memory. There are
    int(nrBytes / lineWidth) + 1
    lines. A C string is always zero-terminated, so an additional byte is
    required.

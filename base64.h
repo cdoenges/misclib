@@ -70,7 +70,7 @@
   @retval NULL Either no input was specified or the output buffer could not
       be allocated.
  */
-unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength);
+unsigned char *base64_decode(unsigned char const *pInputString, size_t *pOutputLength);
 
 
 /** Converts the given binary input to a C string in Base64 encoding according
@@ -83,5 +83,5 @@ unsigned char *base64_decode(unsigned char *pInputString, size_t *pOutputLength)
   @retval NULL Either no input was specified or the output buffer could not
       be allocated.
  */
-unsigned char *base64_encode(unsigned char *pInputData, size_t inputLength);
+unsigned char *base64_encode(unsigned char const *pInputData, size_t inputLength);
 #endif // BASE64_H

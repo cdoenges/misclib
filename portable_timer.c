@@ -22,7 +22,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010, 2015 Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -58,13 +58,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "portable_timer.h"
 
 
 void pt_start(portable_timer_t *pt) {
     assert(NULL != pt);
-    
+
     // Clear the instance to get a clean reading.
     memset(pt, 0, sizeof(portable_timer_t));
     pt->running = true;
@@ -142,7 +143,7 @@ void pt_sleep_ms(unsigned long milliseconds) {
     time_t seconds = (time_t) (milliseconds / 1000);
     struct timespec sleeptime = {
         seconds,
-        (long) (milliseconds - (unsigned long) (seconds*1000)) * 1000000UL };
+        (long) ((milliseconds - (unsigned long) seconds*1000) * 1000000UL) };
     if (nanosleep(&sleeptime, NULL) != 0) {
         // TODO Do something intelligent here.
     }
@@ -164,7 +165,7 @@ int main(int argc, char *argv[]) {
         printf("Timer running for %lu us.\n", pt_elapsed_us(&pt));
         pt_sleep_ms(i * 500);
     } // for i
-    
+
     pt_stop(&pt);
     assert(!pt_is_running(&pt));
     printf("Timer running for %lu us.\n", pt_elapsed_us(&pt));

@@ -1,12 +1,12 @@
 # Attempt to use bash instead of sh.
 SHELL = /bin/bash
 
-CFLAGS = -MMD -g -O0 -Wall -I.
+CFLAGS = -MMD -g -O0 -Wall -Wno-unused-value -I. -DLOGGING_API_USES_VARIADIC_MACROS=0
 
 # Note: This is the command-line for exuberant ctags, located in /opt/local/bin/ctags.
 # Your installation may be different, requiring a different path.
 # (Extra credit for dynamically determining the correct executable to use. :)
-CTAGS  = /opt/local/bin/ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags -R "$(PWD)" -R ../viwa
+CTAGS  = ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags -R "$(PWD)"
 # Use the ctags built into BBEdit (Mac OS X).
 #CTAGS   = bbedit --maketags
 DOXYGEN = doxygen
@@ -24,9 +24,9 @@ keyvalue.o \
 logging.o \
 tcputils.o
 
-LINTPATH = $(HOME)/Applications/pclint
+#LINTPATH = $(HOME)/Applications/pclint
+LINTPATH=../pclint
 LINT = wine $(LINTPATH)/LINT-NT.EXE
-#LINT=/cygdrive/c/Programme/pclint/lint-nt.exe
 OBJDIR = objs
 SRCS = $(OBJS:.o=.c) $(VIWA_OBJS:.o=.c)
 TARGETS = misclib
@@ -53,16 +53,17 @@ docs:
 doc: docs
 
 
-.PHONY: lint
+.PHONY: lint-gcc
 # Run static analysis using PC-Lint/Flexe-Lint
-lint: $(SRCS) $(LINTPATH)/lint_cmac.h
+lint-gcc: $(SRCS) $(LINTPATH)/lint_cmac.h
 	-rm -f _lint.txt
-	-$(LINT) +v -i$(LINTPATH) co-gcc.lnt env-vim.lnt  $(SRCS) -summary >_lint.txt
+	-$(LINT) +v -i$(LINTPATH) co-gcc.lnt env-vim.lnt -DLOGGING_API_USES_VARIADIC_MACROS=0 $(SRCS) -summary >_lint.txt
 # Use +v* for lots of debug output.
 #	-$(LINT) -b -v -i$(LINTPATH) lint/prj-msc100.lnt env-vim.lnt  $(SRCS) -summary\(\) >_lint_msc100.txt
 
 $(LINTPATH)/lint_cmac.h:
 	cd $(LINTPATH) && make -f co-gcc.mak && cd -
+
 
 
 
