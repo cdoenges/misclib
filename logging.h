@@ -26,7 +26,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2014, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,18 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+// In order to compile code using the logging API but with logging disabled
+// (at compile-time), use -DLOGGING_API_DISABLED=1. This is the implicit
+// default when using FTR_EMBEDDED.
+// In all other cases, -DLOGGING_API_DISABLED=0 is default, compiling in
+// calls to the logging API.
+#if FTR_EMBEDDED
+#define LOGGING_API_DISABLED 1
+#endif // FTR_EMBEDDED
+#ifndef LOGGING_API_DISABLED
+#define LOGGING_API_DISABLED 0
+#endif
 
 // If you are in a cross-platform environment where one or more of the
 // compilers does not support variadic macros, define the preprocessor symbol
@@ -242,19 +254,19 @@ extern void log_setStdoutSupression(bool suppress);
  * @param ... A list of parameters as used by @see printf
  */
 #if 0 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessage(log)
     #else
         #define log_logMessage(log) log_logMessage_impl log
         extern void log_logMessage_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #elif 1 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessage(level, format, ...)
     #else
         #define log_logMessage log_logMessage_impl
         extern void log_logMessage_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #else
     #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
 #endif // LOGGING_API_USES_VARIADIC_MACROS
@@ -273,19 +285,19 @@ extern void log_setStdoutSupression(bool suppress);
  * @param ... A list of parameters as used by @see printf
  */
 #if 0 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessageStart(log)
     #else
         #define log_logMessageStart(log) log_logMessageStart_impl log
         extern void log_logMessageStart_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #elif 1 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessageStart(level, format, ...)
     #else
         #define log_logMessageStart log_logMessageStart_impl
         extern void log_logMessageStart_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #else
     #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
 #endif // LOGGING_API_USES_VARIADIC_MACROS
@@ -303,11 +315,11 @@ extern void log_setStdoutSupression(bool suppress);
  * @param format A format string as used by @see printf
  * @param arglist A list of parameters as used by @see vprintf
  */
-#ifdef FTR_EMBEDDED
+#if LOGGING_API_DISABLED
     #define log_logVMessageStart(l, f, a)
 #else
     extern void log_logVMessageStart(log_level_t level, char const *format, va_list arglist);
-#endif // !FTR_EMBEDDED
+#endif // !LOGGING_API_DISABLED
 
 
 
@@ -326,19 +338,19 @@ extern void log_setStdoutSupression(bool suppress);
  * @param ... A list of parameters as used by @see printf
  */
 #if 0 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessageContinue(log)
     #else
         #define log_logMessageContinue(log) log_logMessageContinue_impl log
         extern void log_logMessageContinue_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #elif 1 == LOGGING_API_USES_VARIADIC_MACROS
-    #ifdef FTR_EMBEDDED
+    #if LOGGING_API_DISABLED
         #define log_logMessageContinue(level, format, ...)
     #else
         #define log_logMessageContinue log_logMessageContinue_impl
         extern void log_logMessageContinue_impl(log_level_t level, char const *format, ...);
-    #endif // !FTR_EMBEDDED
+    #endif // !LOGGING_API_DISABLED
 #else
     #error Illegal value for LOGGING_API_USES_VARIADIC_MACROS
 #endif // LOGGING_API_USES_VARIADIC_MACROS
@@ -359,11 +371,11 @@ extern void log_setStdoutSupression(bool suppress);
  * @param format A format string as used by @see printf
  * @param arglist A list of parameters as used by @see vprintf
  */
-#ifdef FTR_EMBEDDED
+#if LOGGING_API_DISABLED
     #define log_logVMessageContinue(l, f, a)
 #else
     extern void log_logVMessageContinue(log_level_t level, char const *format, va_list arglist);
-#endif // !FTR_EMBEDDED
+#endif // !LOGGING_API_DISABLED
 
 
 
