@@ -233,7 +233,7 @@ void log_logLevelStart(log_level_t level) {
             break;
         case LOGLEVEL_NONE:
         default:
-            //lint -e{237} This is intended to fail.
+            //lint -e{237,506} This is intended to fail.
             assert(false);
     } // switch (level)
     log_logMessageContinue_impl(level, prepend_string);
