@@ -195,7 +195,7 @@ static void tcp_log_error(char const *message) {
 #ifdef _WIN32
     int errorCode = WSAGetLastError();  // Obtain the last WinSock error code.
     int level = LOGLEVEL_ERROR;
-    char const *errorStr = "???";
+    char const *errorStr = "\?\?\?";
 
     switch (errorCode) {
         case WSA_INVALID_HANDLE:
@@ -335,9 +335,12 @@ bool tcp_set_socket_nonblocking(int theSocket) {
     int flags;
 
       if ((flags = fcntl(theSocket, F_GETFL, 0)) != -1) {
-         fcntl(theSocket, F_SETFL, flags | O_NONBLOCK);
+         if (fcntl(theSocket, F_SETFL, flags | O_NONBLOCK) < 0) {
+             tcp_log_error("fcntl(O_NONBLOCK) failed");
+             return false;
+         }
       } else {
-         tcp_log_error("fcntl(O_NONBLOCK) failed");
+         tcp_log_error("fcntl(F_GETFL) failed");
          return false;
       }
 #else
@@ -359,9 +362,12 @@ bool tcp_set_socket_blocking(int theSocket) {
     int flags;
 
       if ((flags = fcntl(theSocket, F_GETFL, 0)) != -1) {
-         fcntl(theSocket, F_SETFL, flags & ~O_NONBLOCK);
+         if (fcntl(theSocket, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+             tcp_log_error("fcntl(F_SETFL) failed");
+             return false;
+         }
       } else {
-         tcp_log_error("fcntl(~O_NONBLOCK) failed");
+         tcp_log_error("fcntl(F_GETFL) failed");
          return false;
       }
 #else
@@ -411,7 +417,7 @@ int tcp_client_connect(char const *hostname, int port) {
         // The 'hostname' is not a resolvable name, so try it as an IP address.
         serverAddress.sin_addr.s_addr = inet_addr(hostname);
         host = gethostbyaddr((char *)&serverAddress.sin_addr.s_addr,
-                             sizeof(serverAddress.sin_addr.s_addr),
+                             (unsigned) sizeof(serverAddress.sin_addr.s_addr),
                              AF_INET);
     }
     if (NULL == host) {
@@ -419,7 +425,7 @@ int tcp_client_connect(char const *hostname, int port) {
         tcp_log_error("tcp_client_connect(): Unable to get host address");
         return -1;
     }
-    memcpy(&(serverAddress.sin_addr.s_addr), host->h_addr, (unsigned short) host->h_length);
+    memcpy(&(serverAddress.sin_addr.s_addr), host->h_addr, (size_t) host->h_length);
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         // An error occurred, errno will specify the reason.
