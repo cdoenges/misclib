@@ -1,35 +1,56 @@
 # Attempt to use bash instead of sh.
 SHELL = /bin/bash
 
+# Configure the environment.
+USING_MACOSX := $(shell uname | egrep Darwin)
+
+HAVE_BBEDIT := $(shell which bbedit)
+HAVE_CTAGS := $(shell which ctags)
+
+ifdef HAVE_CTAGS
+HAVE_EXUBERANT_CTAGS := $(shell ctags --version | egrep Exuberant)
+endif
+
+
 CFLAGS = -MMD -g -O0 -Wall -Wno-unused-value -I. -DLOGGING_API_USES_VARIADIC_MACROS=0
 
-# Note: This is the command-line for exuberant ctags, located in /opt/local/bin/ctags.
-# Your installation may be different, requiring a different path.
-# (Extra credit for dynamically determining the correct executable to use. :)
-CTAGS  = ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags -R "$(PWD)"
-# Use the ctags built into BBEdit (Mac OS X).
-#CTAGS   = bbedit --maketags
+ifdef HAVE_EXUBERANT_CTAGS
+# This is the best ctags implementation by far. If you don't have it, consider
+# getting it.
+CTAGS = ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags -R "$(PWD)"
+else
+    ifdef HAVE_BBEDIT
+    CTAGS = bbedit --maketags
+    else
+        ifdef HAVE_CTAGS
+        CTAGS = ctags -f tags $SRCS
+        endif
+    endif
+endif
+
+
 DOXYGEN = doxygen
 LDFLAGS = -g
 LIBS = -lm
 
 OBJS = base64.o \
 begetset.o \
-crc.o \
-itoa.o \
-legetset.o \
-portable_timer.o \
 factorial.o \
+ffactorial.o \
 hex.o \
+itoa.o \
 keyvalue.o \
+legetset.o \
 logging.o \
+portable_timer.o \
+ringbuffer.o \
 tcputils.o
 
 #LINTPATH = $(HOME)/Applications/pclint
 LINTPATH=$(HOME)/pclint
 LINT = wine $(LINTPATH)/LINT-NT.EXE
 OBJDIR = objs
-SRCS = $(OBJS:.o=.c) $(VIWA_OBJS:.o=.c)
+SRCS = $(OBJS:.o=.c)
 TARGETS = misclib
 
 # Directory containing dependency files (*.P).
