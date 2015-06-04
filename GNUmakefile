@@ -15,6 +15,7 @@ LIBS = -lm
 
 OBJS = base64.o \
 begetset.o \
+crc.o \
 itoa.o \
 legetset.o \
 portable_timer.o \
@@ -25,7 +26,7 @@ logging.o \
 tcputils.o
 
 #LINTPATH = $(HOME)/Applications/pclint
-LINTPATH=../pclint
+LINTPATH=$(HOME)/pclint
 LINT = wine $(LINTPATH)/LINT-NT.EXE
 OBJDIR = objs
 SRCS = $(OBJS:.o=.c) $(VIWA_OBJS:.o=.c)
@@ -55,9 +56,12 @@ doc: docs
 
 .PHONY: lint-gcc
 # Run static analysis using PC-Lint/Flexe-Lint
+# We #include all required headers in all header files (to allow use as a
+# library), so lint will complain about system headers getting #included
+# multiple times. We supress this (537) warning globally.
 lint-gcc: $(SRCS) $(LINTPATH)/lint_cmac.h
 	-rm -f _lint.txt
-	-$(LINT) +v -i$(LINTPATH) co-gcc.lnt env-vim.lnt -DLOGGING_API_USES_VARIADIC_MACROS=0 $(SRCS) -summary >_lint.txt
+	-$(LINT) +v -i$(LINTPATH) -e537 co-gcc.lnt env-vim.lnt -DLOGGING_API_USES_VARIADIC_MACROS=0 $(SRCS) -summary >_lint.txt
 # Use +v* for lots of debug output.
 #	-$(LINT) -b -v -i$(LINTPATH) lint/prj-msc100.lnt env-vim.lnt  $(SRCS) -summary\(\) >_lint_msc100.txt
 
