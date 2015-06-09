@@ -51,9 +51,6 @@
 
 
 #include <assert.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 #ifdef _WIN32
 #include <errno.h>
@@ -119,9 +116,15 @@ bool log_closeLogfile(void) {
 
     if (fclose(logFileHandle) != 0) {
         logFileHandle = NULL;
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
         log_logMessage((LOGLEVEL_ERROR,
                        "Unable to close logfile: %s",
                        strerror(errno)));
+#else
+        log_logMessage(LOGLEVEL_ERROR,
+                       "Unable to close logfile: %s",
+                       strerror(errno));
+#endif // LOGGING_API_USES_VARIADIC_MACROS
         return true;
     }
     logFileHandle = NULL;
@@ -230,6 +233,7 @@ void log_logLevelStart(log_level_t level) {
             break;
         case LOGLEVEL_NONE:
         default:
+            //lint -e{237,506} This is intended to fail.
             assert(false);
     } // switch (level)
     log_logMessageContinue_impl(level, prepend_string);
@@ -289,11 +293,15 @@ void log_logData(log_level_t level,
 
     // Special handling for no data.
     if (0 == nrOfBytes) {
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
         log_logMessage((level, "%s (None)", prefixStr));
+#else
+        log_logMessage(level, "%s (None)", prefixStr);
+#endif // LOGGING_API_USES_VARIADIC_MACROS
         return;
     }
 
-    prefixLen = strlen(prefixStr);
+    prefixLen = (unsigned) strlen(prefixStr);
 
     while (nrOfBytes > 0) {
         // Calculate the most bytes that will fit into the buffer.
@@ -306,17 +314,26 @@ void log_logData(log_level_t level,
         if (hexbuf2String(pData, chunkSize,
                           debugBuffer, sizeof(debugBuffer),
                           USE_CRLF, false,          // CRLF, no ASCII
-                          hexWidth,                 // linewidth
+                          (unsigned) hexWidth,      // linewidth
                           false, 0)                 // show no offset, offset = 0
              == NULL) {
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
                 log_logMessage((LOGLEVEL_ERROR,
-                               "tcp_log_data(): unable to hexify buffer"));
+                        "tcp_log_data(): unable to hexify buffer"));
+#else
+                log_logMessage(LOGLEVEL_ERROR,
+                       "tcp_log_data(): unable to hexify buffer");
+#endif // LOGGING_API_USES_VARIADIC_MACROS
                 return;
         }
         // Remove the trailing CRLF because log_logMessage() will append it again.
         debugBuffer[strlen(debugBuffer) - 2] = '\0';
         if (firstLine) {
+#if 0 == LOGGING_API_USES_VARIADIC_MACROS
             log_logMessage((level, "%s %s", prefixStr, debugBuffer));
+#else
+            log_logMessage(level, "%s %s", prefixStr, debugBuffer);
+#endif // LOGGING_API_USES_VARIADIC_MACROS
             firstLine = false;
         } else {
             log_logLevelStart(level);

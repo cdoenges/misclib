@@ -105,9 +105,7 @@ double ffactorial(double n) {
         } // for i
     }
 
-printf("ffactorial(%g) = %g\n", n, f);
     return f;
-
 } // ffactorial()
 
 

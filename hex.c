@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2014, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -125,7 +125,7 @@ uint_fast16_t hexToInt16(char const *pSrc) {
         n <<= 4;
         n += (uint_fast16_t) hexdigitToNibble(*pSrc);
     } // for i
- 
+
     return n;
 } // hexToInt16()
 
@@ -142,7 +142,7 @@ uint_fast32_t hexToInt32(char const *pSrc) {
         n <<= 4;
         n += (uint_fast16_t) hexdigitToNibble(*pSrc);
     } // for i
- 
+
     return n;
 } // hexToInt32()
 
@@ -162,8 +162,8 @@ size_t hexbuf2StringLength(size_t nrBytes,
 	if ((1 == nrOfLines) && !showASCII) {
 		bytesPerLine = 8 + 1 + 3 * nrOfLines + (useCRLF ? 2 : 1);
 	} else {
-		bytesPerLine = 8 + 1 + 3 * lineWidth
-			+ (showASCII ? lineWidth : 0)
+		bytesPerLine = 8 + 1 + 3 * (size_t) lineWidth
+			+ (showASCII ? (size_t) lineWidth : 0)
 			+ (useCRLF ? 2 : 1);
 	}
     totalBytes = bytesPerLine * nrOfLines + 1;
@@ -177,9 +177,9 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                     char *pStringBuffer, size_t stringBufferSize,
                     bool useCRLF, bool showASCII, unsigned lineWidth,
                     bool showOffset, size_t initialOffset) {
-    size_t requiredStringBufferSize = 0;
+    size_t requiredStringBufferSize;
     size_t currentOffset = initialOffset;
-    char *pOutputBuffer = NULL;
+    char *pOutputBuffer;
 
 
     assert(NULL != pValueBuffer);
@@ -221,8 +221,8 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
         if (nrBytes < lineWidth) {
             // The last line is only partially filled.
-            paddingChars = (lineWidth - nrBytes) * 3;
-            lineWidth = nrBytes;
+            paddingChars = (unsigned) (lineWidth - nrBytes) * 3;
+            lineWidth = (unsigned) nrBytes;
         }
 
         if (showOffset) {
@@ -232,7 +232,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
         }
 
         // Dump as hex touples.
-        for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+        for (offsetInLine = 0, pCurrentValue = (unsigned char const *) pValueBuffer;
              offsetInLine < lineWidth;
              offsetInLine++, pCurrentValue ++) {
             *pStringBuffer++ = ' ';
@@ -250,10 +250,10 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                 // achieve nice alignment of the ASCII representation.
                 *pStringBuffer++ = ' ';
             }
-            for (offsetInLine = 0, pCurrentValue = pValueBuffer;
+            for (offsetInLine = 0, pCurrentValue = (unsigned char const *) pValueBuffer;
                  offsetInLine < lineWidth;
                  offsetInLine++, pCurrentValue ++) {
-                c = isprint(*pCurrentValue) ? *pCurrentValue : '.';
+                c = isprint(*pCurrentValue) ? (char) *pCurrentValue : '.';
                 *pStringBuffer++ = c;
             } // for offsetInLine
         } // if showASCII
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
     // Test int4ToHex()
     for (i = 0;i < 16;i ++) {
         char c;
-        
+
         int4ToHex(&c, i);
         if (hexdigitToNibble(c) != i) {
             printf("int4ToHex(i) FAILED.\n");
@@ -458,7 +458,7 @@ int main(int argc, char *argv[]) {
     }
     printf("hexbuf2StringLength() PASSED.\n");
 
-    pStringBuffer = hexbuf2String(hex08Array, 0, 
+    pStringBuffer = hexbuf2String(hex08Array, 0,
                                   hex16Array, sizeof(hex16Array),
                                   false, true, 8,
                                   true, 0);
@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     printf("%s\n", hex16Array);
-    pStringBuffer = hexbuf2String(hex08Array, 117, 
+    pStringBuffer = hexbuf2String(hex08Array, 117,
                                   hex16Array, sizeof(hex16Array),
                                   false, true, 8,
                                   true, 0);
@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     printf("%s\n", hex16Array);
-    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25, 
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25,
                                   NULL, sizeof(hex16Array),
                                   false, true, 8,
                                   true, 0);
@@ -486,7 +486,7 @@ int main(int argc, char *argv[]) {
     }
     printf(pStringBuffer);
     free(pStringBuffer);
-    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25, 
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 25,
                                   NULL, sizeof(hex16Array),
                                   false, true, 8,
                                   false, 0);
@@ -496,7 +496,7 @@ int main(int argc, char *argv[]) {
     }
     printf(pStringBuffer);
     free(pStringBuffer);
-    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37,
                                   NULL, sizeof(hex16Array),
                                   false, true, 15,
                                   true, 0x12340023);
@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
     }
     printf(pStringBuffer);
     free(pStringBuffer);
-    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37, 
+    pStringBuffer = hexbuf2String(hex08Array + 0x19, 37,
                                   NULL, sizeof(hex16Array),
                                   false, false, 8,
                                   true, 0x00112233);
