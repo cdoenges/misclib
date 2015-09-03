@@ -3,7 +3,7 @@
     Each key-value object contains a number of keys with an attached value.
 
     The key is always a string in the current implementation. The value is
-    a boolean, an integer, a floating-point number, or a string.
+    a boolean, an integer, a floating-point number, a pointer, or a string.
 
     Note that this implementation could be improved in performance by choosing
     a different way of organizing the data, such as a hash table. This is
@@ -26,7 +26,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -62,9 +62,23 @@
 
 #include <stdbool.h>
 
+
+#undef MISCLIB_EXTERN
+#if defined(_WIN32)
+#ifdef BUILD_MISCLIB
+// Export symbols while building this part of the DLL.
+#define MISCLIB_EXTERN __declspec(dllexport)
+#else
+// Import symbols while using the DLL.
+#define MISCLIB_EXTERN __declspec(dllimport)
+#endif // !BUILD_MISCLIB
+#else
+#define MISCLIB_EXTERN extern
+#endif // !_WIN32
+
 // This header defines an API, do not complain if functions are not used.
-//lint -esym(714, kv_initializeIterator, kv_iterateNext, kv_createCollection, kv_clearCollection, kv_freeCollection, kv_createObject, kv_freeObject, kv_findObjectForKey, kv_addObjectToCollection, kv_remove, kv_getTypeFromObject, kv_getBoolValueFromObject, kv_getIntValueFromObject, kv_getFloatValueFromObject, kv_getStringValueFromObject, kv_insertBool, kv_insertInt, kv_insertFloat, kv_insertString, kv_getBool, kv_getInt, kv_getFloat, kv_getString)
-//lint -esym(759, kv_initializeIterator, kv_iterateNext, kv_createCollection, kv_clearCollection, kv_freeCollection, kv_createObject, kv_freeObject, kv_findObjectForKey, kv_addObjectToCollection, kv_remove, kv_getTypeFromObject, kv_getBoolValueFromObject, kv_getIntValueFromObject, kv_getFloatValueFromObject, kv_getStringValueFromObject, kv_insertBool, kv_insertInt, kv_insertFloat, kv_insertString, kv_getBool, kv_getInt, kv_getFloat, kv_getString)
+//lint -esym(714, kv_initializeIterator, kv_iterateNext, kv_createCollection, kv_clearCollection, kv_freeCollection, kv_createObject, kv_freeObject, kv_findObjectForKey, kv_addObjectToCollection, kv_remove, kv_getTypeFromObject, kv_getBoolValueFromObject, kv_getIntValueFromObject, kv_getFloatValueFromObject, kv_getPointerValueFromObject, kv_getStringValueFromObject, kv_insertBool, kv_insertInt, kv_insertFloat, kv_insertPointer, kv_insertString, kv_getBool, kv_getInt, kv_getFloat, kv_getPointer, kv_getString)
+//lint -esym(759, kv_initializeIterator, kv_iterateNext, kv_createCollection, kv_clearCollection, kv_freeCollection, kv_createObject, kv_freeObject, kv_findObjectForKey, kv_addObjectToCollection, kv_remove, kv_getTypeFromObject, kv_getBoolValueFromObject, kv_getIntValueFromObject, kv_getFloatValueFromObject, kv_getPointerValueFromObject, kv_getStringValueFromObject, kv_insertBool, kv_insertInt, kv_insertFloat, kv_insertPointer, kv_insertString, kv_getBool, kv_getInt, kv_getFloat, kv_getPointer, kv_getString)
 
 
 /** The type to use for object keys. */
@@ -83,6 +97,8 @@ typedef enum {
     KV_VALUE_FLOAT,
     /** The value is a string. */
     KV_VALUE_STRING,
+    /** The value is a pointer. */
+    KV_VALUE_POINTER,
     /** The value type is unknown and unsupported. */
     KV_VALUE_UNKNOWN
 } kv_value_type_t;
@@ -110,6 +126,8 @@ struct s_kv_object {
         int    i;
         /** Floating-point value. */
         double f;
+        /** Pointer value. */
+        void *p;
         /** String value. */
         char  *s;
     } value;
@@ -139,7 +157,7 @@ typedef kv_object_t *kv_iterator_t;
    @param pCollection A pointer to the collection to iterate.
    @return The first object in the collection or NULL if the collection is empty.
  */
-extern kv_object_t *kv_initializeIterator(kv_iterator_t *pIterator,
+MISCLIB_EXTERN kv_object_t *kv_initializeIterator(kv_iterator_t *pIterator,
                                    kv_collection_t const *pCollection);
 
 
@@ -149,7 +167,7 @@ extern kv_object_t *kv_initializeIterator(kv_iterator_t *pIterator,
    @param pIterator A pointer to the iterator.
    @return Address of the object or NULL at the end of the collection.
  */
-extern kv_object_t *kv_iterateNext(kv_iterator_t *pIterator);
+MISCLIB_EXTERN kv_object_t *kv_iterateNext(kv_iterator_t *pIterator);
 
 
 
@@ -159,7 +177,7 @@ extern kv_object_t *kv_iterateNext(kv_iterator_t *pIterator);
       if the memory used is to be reclaimed.
    @return A pointer to the new collection of NULL if an error occurred.
  */
-extern kv_collection_t *kv_createCollection(void);
+MISCLIB_EXTERN kv_collection_t *kv_createCollection(void);
 
 
 
@@ -168,7 +186,7 @@ extern kv_collection_t *kv_createCollection(void);
    @note The collection must be free()ed by calling kv_freeCollection()
       if the memory used is to be reclaimed.
  */
-extern void kv_clearCollection(kv_collection_t *pCollection);
+MISCLIB_EXTERN void kv_clearCollection(kv_collection_t *pCollection);
 
 
 
@@ -176,7 +194,7 @@ extern void kv_clearCollection(kv_collection_t *pCollection);
 
    @param pCollection The collection to free.
  */
-extern void kv_freeCollection(kv_collection_t *pCollection);
+MISCLIB_EXTERN void kv_freeCollection(kv_collection_t *pCollection);
 
 
 
@@ -186,7 +204,7 @@ extern void kv_freeCollection(kv_collection_t *pCollection);
    @return The new object with the copy of the key. NULL if the object
        could not be created.
  */
-extern kv_object_t *kv_createObject(kv_key_t pKey);
+MISCLIB_EXTERN kv_object_t *kv_createObject(kv_key_t pKey);
 
 
 
@@ -200,7 +218,7 @@ extern kv_object_t *kv_createObject(kv_key_t pKey);
 
    @param pObject The object to free.
  */
-extern void kv_freeObject(kv_object_t *pObject);
+MISCLIB_EXTERN void kv_freeObject(kv_object_t *pObject);
 
 
 
@@ -210,7 +228,7 @@ extern void kv_freeObject(kv_object_t *pObject);
    @param pKey The key to find.
    @return A pointer to the object or NULL if it was not found.
  */
-extern kv_object_t *kv_findObjectForKey(kv_collection_t const *pCollection, kv_key_t pKey);
+MISCLIB_EXTERN kv_object_t *kv_findObjectForKey(kv_collection_t const *pCollection, kv_key_t pKey);
 
 
 /** Adds a single object to the collection.
@@ -222,7 +240,7 @@ extern kv_object_t *kv_findObjectForKey(kv_collection_t const *pCollection, kv_k
    @pre pObject != NULL
    @pre pObject->next == NULL
 */
-extern void kv_addObjectToCollection(kv_collection_t *pCollection, kv_object_t *pObject);
+MISCLIB_EXTERN void kv_addObjectToCollection(kv_collection_t *pCollection, kv_object_t *pObject);
 
 
 
@@ -234,7 +252,7 @@ extern void kv_addObjectToCollection(kv_collection_t *pCollection, kv_object_t *
    @retval true The object was found and removed from the collection.
    @retval false The object was not removed.
  */
-extern bool kv_remove(kv_collection_t *pCollection, kv_key_t pKey);
+MISCLIB_EXTERN bool kv_remove(kv_collection_t *pCollection, kv_key_t pKey);
 
 
 
@@ -243,7 +261,7 @@ extern bool kv_remove(kv_collection_t *pCollection, kv_key_t pKey);
    @param pObject The object to query.
    @return The value type stored in the object.
  */
-extern kv_value_type_t kv_getTypeFromObject(kv_object_t const *pObject);
+MISCLIB_EXTERN kv_value_type_t kv_getTypeFromObject(kv_object_t const *pObject);
 
 
 
@@ -253,7 +271,7 @@ extern kv_value_type_t kv_getTypeFromObject(kv_object_t const *pObject);
    @return The value stored in the object.
    @pre The object must contain the right type of value.
  */
-extern bool kv_getBoolValueFromObject(kv_object_t const *pObject);
+MISCLIB_EXTERN bool kv_getBoolValueFromObject(kv_object_t const *pObject);
 
 
 
@@ -263,7 +281,7 @@ extern bool kv_getBoolValueFromObject(kv_object_t const *pObject);
    @return The value stored in the object.
    @pre The object must contain the right type of value.
  */
-extern int kv_getIntValueFromObject(kv_object_t const *pObject);
+MISCLIB_EXTERN int kv_getIntValueFromObject(kv_object_t const *pObject);
 
 
 
@@ -273,7 +291,17 @@ extern int kv_getIntValueFromObject(kv_object_t const *pObject);
    @return The value stored in the object.
    @pre The object must contain the right type of value.
  */
-extern double kv_getFloatValueFromObject(kv_object_t const *pObject);
+MISCLIB_EXTERN double kv_getFloatValueFromObject(kv_object_t const *pObject);
+
+
+
+/** Returns the pointer value stored in the object.
+
+@param pObject The object to get the value from.
+@return The value stored in the object.
+@pre The object must contain the right type of value.
+*/
+MISCLIB_EXTERN void *kv_getPointerValueFromObject(kv_object_t const *pObject);
 
 
 
@@ -283,7 +311,7 @@ extern double kv_getFloatValueFromObject(kv_object_t const *pObject);
    @return The value stored in the object.
    @pre The object must contain the right type of value.
  */
-extern char const *kv_getStringValueFromObject(kv_object_t const *pObject);
+MISCLIB_EXTERN char const *kv_getStringValueFromObject(kv_object_t const *pObject);
 
 
 
@@ -296,7 +324,7 @@ extern char const *kv_getStringValueFromObject(kv_object_t const *pObject);
    @param value The value to store with the key.
    @return A pointer to the object containing the value.
 */
-extern kv_object_t *kv_insertBool(kv_collection_t *pCollection, kv_key_t pKey, bool value);
+MISCLIB_EXTERN kv_object_t *kv_insertBool(kv_collection_t *pCollection, kv_key_t pKey, bool value);
 
 
 
@@ -309,7 +337,7 @@ extern kv_object_t *kv_insertBool(kv_collection_t *pCollection, kv_key_t pKey, b
    @param value The value to store with the key.
    @return A pointer to the object containing the value.
 */
-extern kv_object_t *kv_insertInt(kv_collection_t *pCollection, kv_key_t pKey, int value);
+MISCLIB_EXTERN kv_object_t *kv_insertInt(kv_collection_t *pCollection, kv_key_t pKey, int value);
 
 
 
@@ -322,7 +350,20 @@ extern kv_object_t *kv_insertInt(kv_collection_t *pCollection, kv_key_t pKey, in
    @param value The value to store with the key.
    @return A pointer to the object containing the value.
 */
-extern kv_object_t *kv_insertFloat(kv_collection_t *pCollection, kv_key_t pKey, double value);
+MISCLIB_EXTERN kv_object_t *kv_insertFloat(kv_collection_t *pCollection, kv_key_t pKey, double value);
+
+
+
+/** Stores a pointrt value in the object with the given key in the collection.
+
+    If an object with the specified value exists, the value will be overwritten.
+
+    @param pCollection The collection that will contain the object.
+    @param pKey The key identifying the object containing the value.
+    @param value The value to store with the key.
+    @return A pointer to the object containing the value.
+ */
+MISCLIB_EXTERN kv_object_t *kv_insertPointer(kv_collection_t *pCollection, kv_key_t pKey, void const *value);
 
 
 
@@ -330,12 +371,17 @@ extern kv_object_t *kv_insertFloat(kv_collection_t *pCollection, kv_key_t pKey, 
 
    If an object with the specified value exists, the value will be overwritten.
 
+   @note A copy of the string is stored using #strdup() from the C standard
+   library. The copy of the string is automatically #free()ed when it is
+   either replaced or the object in the collection is deleted (using
+   #kv_freeObject).
+
    @param pCollection The collection that will contain the object.
    @param pKey The key identifying the object containing the value.
    @param value The value to store with the key.
    @return A pointer to the object containing the value.
 */
-extern kv_object_t *kv_insertString(kv_collection_t *pCollection, kv_key_t const pKey, char const *value);
+MISCLIB_EXTERN kv_object_t *kv_insertString(kv_collection_t *pCollection, kv_key_t const pKey, char const *value);
 
 
 
@@ -348,7 +394,7 @@ extern kv_object_t *kv_insertString(kv_collection_t *pCollection, kv_key_t const
    @param pKey The key identifying the object containing the value.
    @return The value stored with the key.
 */
-bool kv_getBool(kv_collection_t const *pCollection, kv_key_t const pKey);
+MISCLIB_EXTERN bool kv_getBool(kv_collection_t const *pCollection, kv_key_t const pKey);
 
 
 
@@ -361,7 +407,7 @@ bool kv_getBool(kv_collection_t const *pCollection, kv_key_t const pKey);
    @param pKey The key identifying the object containing the value.
    @return The value stored with the key.
 */
-int kv_getInt(kv_collection_t const *pCollection, kv_key_t const pKey);
+MISCLIB_EXTERN int kv_getInt(kv_collection_t const *pCollection, kv_key_t const pKey);
 
 
 
@@ -374,7 +420,21 @@ int kv_getInt(kv_collection_t const *pCollection, kv_key_t const pKey);
    @param pKey The key identifying the object containing the value.
    @return The value stored with the key.
 */
-double kv_getFloat(kv_collection_t const *pCollection, kv_key_t const pKey);
+MISCLIB_EXTERN double kv_getFloat(kv_collection_t const *pCollection, kv_key_t const pKey);
+
+
+
+/** Returns the pointer value stored with the given key in the collection.
+
+    If the key does not exist, NULL is returned. If you want to know if the key exists, use
+    kv_findObjectForKey.
+
+    @param pCollection The collection to search the for the key.
+    @param pKey The key identifying the object containing the value.
+    @return The value stored with the key.
+    @retval NULL A NULL pointer was stored or the key does not exist.
+ */
+MISCLIB_EXTERN void *kv_getPointer(kv_collection_t const *pCollection, kv_key_t const pKey);
 
 
 
@@ -387,7 +447,7 @@ double kv_getFloat(kv_collection_t const *pCollection, kv_key_t const pKey);
    @param pKey The key identifying the object containing the value.
    @return The value stored with the key.
 */
-char const *kv_getString(kv_collection_t const *pCollection, kv_key_t const pKey);
+MISCLIB_EXTERN char const *kv_getString(kv_collection_t const *pCollection, kv_key_t const pKey);
 
 
 #endif // KEYKV_VALUE_H

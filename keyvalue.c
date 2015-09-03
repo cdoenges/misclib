@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ kv_object_t *kv_iterateNext(kv_iterator_t *pIterator) {
 
 
 kv_collection_t *kv_createCollection(void) {
-    kv_collection_t *pCollection = (kv_collection_t *) calloc(1ul, sizeof(kv_collection_t));
+    kv_collection_t *pCollection = calloc(1ul, sizeof(kv_collection_t));
 
     // Note: the following is only needed for the odd platform where
     // NULL is not identical to binary 0.
@@ -129,11 +129,11 @@ kv_object_t *kv_createObject(kv_key_t pKey) {
     kv_object_t *pObject;
     assert(NULL != pKey);
 
-    if (NULL == (pObject = (kv_object_t *) calloc(1ul, sizeof(kv_object_t)))) {
+    if (NULL == (pObject = calloc(1ul, sizeof(kv_object_t)))) {
         return NULL;
     }
 
-    if (NULL == (pObject->key = (kv_key_t) strdup((char const *) pKey))) {
+    if (NULL == (pObject->key = (kv_key_t) strdup((char *) pKey))) {
         free(pObject);
         return NULL;
     }
@@ -170,7 +170,7 @@ kv_object_t *kv_findObjectForKey(kv_collection_t const *pCollection, kv_key_t pK
     pObject = kv_initializeIterator(&iterator, pCollection);
     while (NULL != pObject) {
         assert(NULL != pObject->key);
-        if (strcmp((char const *) pKey, (char const *) pObject->key) == 0) {
+        if (strcmp((char *) pKey, (char *) pObject->key) == 0) {
             return pObject;
         }
         pObject = kv_iterateNext(&iterator);
@@ -280,6 +280,33 @@ kv_object_t *kv_insertFloat(kv_collection_t *pCollection, kv_key_t pKey, double 
 
 
 
+kv_object_t *kv_insertPointer(kv_collection_t *pCollection, kv_key_t pKey, void const *value) {
+    kv_object_t   *pObject;
+
+    assert(NULL != pCollection);
+    assert(NULL != pKey);
+
+
+    // Find the object matching the given key.
+    pObject = kv_findObjectForKey(pCollection, pKey);
+    if (NULL == pObject) {
+        // No object was found, so create it and add it to the collection.
+        if ((pObject = kv_createObject(pKey)) == NULL) {
+            // Out of memory error.
+            return NULL;
+        }
+        pObject->type = KV_VALUE_POINTER;
+        kv_addObjectToCollection(pCollection, pObject);
+    }
+
+    // Enter the value.
+    assert(KV_VALUE_POINTER == pObject->type);
+    pObject->value.p = (void *) value;
+    return pObject;
+} // end kv_insertPointer()
+
+
+
 kv_object_t *kv_insertString(kv_collection_t *pCollection, kv_key_t const pKey, char const *value) {
     kv_object_t   *pObject;
 
@@ -324,7 +351,7 @@ bool kv_remove(kv_collection_t *pCollection, kv_key_t pKey) {
     pObject = kv_initializeIterator(&iterator, pCollection);
     while (NULL != pObject) {
         assert(NULL != pObject->key);
-        if (strcmp((char const *) pKey, (char const *) pObject->key) == 0) {
+        if (strcmp((char *) pKey, (char *) pObject->key) == 0) {
             break;
         }
         pPreviousObject = pObject;
@@ -389,6 +416,15 @@ double kv_getFloatValueFromObject(kv_object_t const *pObject) {
 
 
 
+void *kv_getPointerValueFromObject(kv_object_t const *pObject) {
+    assert(NULL != pObject);
+    assert(KV_VALUE_POINTER == pObject->type);
+
+    return pObject->value.p;
+} // end kv_getPointerValueFromObject()
+
+
+
 char const *kv_getStringValueFromObject(kv_object_t const *pObject) {
     assert(NULL != pObject);
     assert(KV_VALUE_STRING == pObject->type);
@@ -440,6 +476,20 @@ double kv_getFloat(kv_collection_t const *pCollection, kv_key_t const pKey) {
 
 
 
+void *kv_getPointer(kv_collection_t const *pCollection, kv_key_t const pKey) {
+    kv_object_t *obj = kv_findObjectForKey(pCollection, pKey);
+
+
+    if (NULL == obj) {
+        return NULL;
+    }
+
+    assert(KV_VALUE_POINTER == obj->type);
+    return kv_getPointerValueFromObject(obj);
+} // end kv_getPointer()
+
+
+
 char const *kv_getString(kv_collection_t const *pCollection, kv_key_t const pKey) {
     kv_object_t *obj = kv_findObjectForKey(pCollection, pKey);
 
@@ -455,6 +505,8 @@ char const *kv_getString(kv_collection_t const *pCollection, kv_key_t const pKey
 
 
 #ifdef UNITTEST
+#include <stdio.h>
+
 int main(int argc, char *argv[]) {
     kv_collection_t *myCollection;
     kv_object_t *theObject;
@@ -464,9 +516,11 @@ int main(int argc, char *argv[]) {
 #define KEY2 (kv_key_t) "key2"
 #define KEY3 (kv_key_t) "key3"
 #define KEY4 (kv_key_t) "key4"
+#define KEY5 (kv_key_t) "key5"
 #define KEYx (kv_key_t) "keyX"
 #define INT 1234567
 #define FLOAT 123.45678
+#define POINTER ((void *) 0x12345678)
 #define STRING "Hello, world!"
 
     // Create a collection.
@@ -491,6 +545,8 @@ int main(int argc, char *argv[]) {
     assert(NULL != theObject);
     theObject = kv_insertString(myCollection, KEY4, STRING);
     assert(NULL != theObject);
+    theObject = kv_insertPointer(myCollection, KEY5, POINTER);
+    assert(NULL != theObject);
 
     // Check all the values.
     theObject = kv_findObjectForKey(myCollection, KEY2);
@@ -508,6 +564,11 @@ int main(int argc, char *argv[]) {
     assert(kv_getTypeFromObject(theObject) == KV_VALUE_STRING);
     assert(strcmp(kv_getStringValueFromObject(theObject), STRING) == 0);
     assert(strcmp(kv_getString(myCollection, KEY4), STRING) == 0);
+    theObject = kv_findObjectForKey(myCollection, KEY5);
+    assert(NULL != theObject);
+    assert(kv_getTypeFromObject(theObject) == KV_VALUE_POINTER);
+    assert(kv_getPointerValueFromObject(theObject) == POINTER);
+    assert(kv_getPointer(myCollection, KEY5) == POINTER);
 
     // Overwrite a value
     theObject = kv_insertInt(myCollection, KEY2, 1-INT);
@@ -524,6 +585,7 @@ int main(int argc, char *argv[]) {
     assert(kv_getInt(myCollection, KEYx) == 0);
     assert(kv_getFloat(myCollection, KEYx) == 0.0);
     assert(kv_getString(myCollection, KEYx) == NULL);
+    assert(kv_getPointer(myCollection, KEYx) == NULL);
 
     puts("Unittest passed.");
 } // end main()
