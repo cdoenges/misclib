@@ -66,17 +66,22 @@ typedef enum {
 
 void foo(void) {
     printf("Entering foo()\n");
-//    XTHROW(FOOBAR_EXCEPTION);
+    // Won't work:
+    // XTHROW(FOOBAR_EXCEPTION);
+    xtc_throw(FOOBAR_EXCEPTION);
     printf("Exiting foo()\n");
 } // foo()
 
 
 void bar(xexeption_t e) {
     printf("Entering bar()\n");
-//    XTHROW(e);
+    xtc_throw(e);
     printf("Exiting bar()\n");
 } // bar()
 
+
+
+xtc_buf_t *g_xtc_last = NULL;
 
 int main(int argc, char *argv[]) {
     xexeption_t exception;
@@ -123,6 +128,50 @@ int main(int argc, char *argv[]) {
         XCATCHALL
             printf("Caught something else\n");
         XEND;
+    } // for (exception)
+
+    printf("Test 4\n");
+    xtc_try {
+        foo();
+        printf("Caught nothing.\n");
+    } xtc_catch(FOOBAR_EXCEPTION) {
+        printf("Caught foobar\n");
+    }
+    xtc_end;
+
+    printf("Test 5\n");
+    for (exception = FOOBAR_EXCEPTION;
+         exception <= UNKNOWN_EXCEPTION;
+         exception ++) {
+        xtc_try {
+            bar(exception);
+        } xtc_catch(FOOBAR_EXCEPTION) {
+            printf("Caught FOOBAR_EXCEPTION\n");
+        } xtc_catch(SNAFU_EXCEPTION) {
+            printf("Caught SNAFU_EXCEPTION\n");
+        } xtc_catch(SNOWBALL_EXCEPTION) {
+            printf("Caught SNOWBALL_EXCEPTION\n");
+        } xtc_catchall {
+            printf("Caught something else\n");
+        }
+        xtc_end;
+    } // for (exception)
+
+    printf("Test 6\n");
+    for (exception = FOOBAR_EXCEPTION;
+         exception <= UNKNOWN_EXCEPTION;
+         exception ++) {
+        xtc_try
+            bar(exception);
+        xtc_catch(FOOBAR_EXCEPTION)
+            printf("Caught FOOBAR_EXCEPTION\n");
+        xtc_catch(SNAFU_EXCEPTION)
+            printf("Caught SNAFU_EXCEPTION\n");
+        xtc_catch(SNOWBALL_EXCEPTION)
+            printf("Caught SNOWBALL_EXCEPTION\n");
+        xtc_catchall
+            printf("Caught something else\n");
+        xtc_end;
     } // for (exception)
 
     printf("Done!\n");

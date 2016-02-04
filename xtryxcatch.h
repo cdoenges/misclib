@@ -4,8 +4,17 @@
     using variables on the stack and the setjmp()/longjmp() functions.
 
     @note It is strongly advised to use braces after each of the macros
-    (except for #XEND), but it is not required if a single statement
+    (except for #XEND/#xtc_end), but it is not required if a single statement
     follows the macro. This is exactly how C handles if/else statements.
+
+    There are two different implementations for different needs:
+
+    <h3>XTRY/XCATCH/XTHROW</h3>
+    Works without any global storage and is reentrant and thread-safe.
+    Exceptions may be nested.
+    Supports exceptions only within the current local
+    scope, so you can not catch an exception thrown within a function
+    called in an XTRY block.
 
     Example:
     <code>
@@ -29,6 +38,49 @@
         }
         XEND;
     </code>
+
+
+    <h3>xtc_try/xtc_catch/xtc_throw</h3>
+    Requires a single global variable, so it is neither reentrant nor
+    thread-safe.
+    Exceptions may be nested.
+    Exceptions thrown by a subroutine will be caught by the closest handler
+    in the call hierarchy.
+
+    Example:
+    <code>
+        typedef enum {
+            FOOBAR_EXCEPTION = 1,
+            SNAFU_EXCEPTION,
+            SNOWBALL_EXCEPTION,
+            UNKNOWN_EXCEPTION
+        } xexeption_t;
+
+        xtc_buf_t *g_xtc_last = NULL;
+
+        void foo(void) {
+            xtc_try {
+                xtc_throw(SNAFU_EXCEPTION);
+            } xtc_catchall {
+                xtc_throw(FOOBAR_EXCEPTION);
+            }
+            xtc_end;
+        }
+
+        xtc_try {
+            XTHROW(exception);
+        } xtc_catch(FOOBAR_EXCEPTION) {
+            printf("Caught FOOBAR_EXCEPTION\n");
+        } xtc_catch(SNAFU_EXCEPTION) {
+            printf("Caught SNAFU_EXCEPTION\n");
+        } xtc_catch(SNOWBALL_EXCEPTION) {
+            printf("Caught SNOWBALL_EXCEPTION\n");
+        } xtc_catchall {
+            printf("Caught something else\n");
+        }
+        xtc_end;
+    </code>
+
    @file xtryxcatch.h
    @ingroup misclib
 
@@ -79,6 +131,9 @@
 
 #include <setjmp.h>
 
+//
+// First variant (XTRY/XCATCH/XTHROW).
+//
 
 /** Starts a block that will catch thrown exceptions. */
 #define XTRY                    \
@@ -110,12 +165,72 @@
     } // XTRY
 
 
+#define XTHROW(e) longjmp(jump_buffer, e)
+
+
+
+//
+// Second variant (xtc_try/xtc_catch/xtc_throw).
+//
+
+/** Contains the current exception handler context. */
+typedef struct xtc_buf_s {
+    /** Pointer to the previous context (i.e. the one wrapping this one). */
+    struct xtc_buf_s *previous;
+    /** The code of the last exception thrown or 0 if none. */
+    unsigned exceptionCode;
+    /** The setjmp() buffer used by the handler. */
+    jmp_buf jumpBuffer;
+} xtc_buf_t;
+
+
+
+/** Global pointer to last #xtc_buf_t instance.
+
+    @note This *must* be declared and set to NULL somewhere.
+ */
+extern xtc_buf_t *g_xtc_last;
+
+
+/** Starts a block that will catch thrown exceptions. */
+#define xtc_try                                 \
+    {                                           \
+        xtc_buf_t xtcBuf = { g_xtc_last, 0 };   \
+        g_xtc_last = &xtcBuf;                   \
+                                                \
+                                                \
+        switch(setjmp(xtcBuf.jumpBuffer)) {     \
+            case 0:             \
+
+/** Catches the specified exception type.
+
+    @param e An integer specifying the exception to catch.
+    @pre e != 0
+ */
+#define xtc_catch(e)                            \
+                break;                          \
+            case (e):
+
+/** Catches all exceptions not caught using explicit #XCATCH. */
+#define xtc_catchall                            \
+                break;                          \
+            default:
+
+/** Ends a block started with #XTRY. This *MUST* be used to avoid compiler
+    errors.
+ */
+#define xtc_end                                 \
+        }                                       \
+        g_xtc_last = xtcBuf.previous;           \
+    } // xtc_try
+
+
 /** Throws an exception of the given type.
 
     @param e The exception type to throw. Must be an integer != 0.
     @pre e != 0
  */
-#define XTHROW(e) longjmp(jump_buffer, e)
+#define xtc_throw(e) do { g_xtc_last->exceptionCode = e; longjmp(g_xtc_last->jumpBuffer, e); } while (0 == 1)
 
 
 #endif // !XTRYXCATCH_H
