@@ -6,7 +6,7 @@
     $ ./xtryxcatchdemo
     </pre>
     
-   @file xtryxcatch.c
+   @file xtryxcatchdemo.c
    @ingroup misclib
 
    @author Christian D&ouml;nges <cd@platypus-projects.de>
