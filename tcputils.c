@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011-2015, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2011-2016, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -95,6 +95,12 @@
 
 #include "logging.h"
 #include "tcputils.h"
+
+
+#ifdef _MSC_VER
+// Disable warnings for functions VS C considers deprecated.
+#pragma warning(disable: 4996)
+#endif // _MSC_VER
 
 
 /*

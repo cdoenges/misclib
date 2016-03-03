@@ -17,7 +17,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2016, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,11 @@
 #endif // !_WIN32
 #include "hex.h"
 #include "logging.h"
+
+#ifdef _MSC_VER
+// Disable warnings for functions VS C considers deprecated.
+#pragma warning(disable: 4996)
+#endif // _MSC_VER
 
 #define FTR_LOG_GLOBAL_BUFFER
 #define FTR_LOG_BUFFER_SIZE 4096
@@ -232,9 +237,11 @@ void log_logLevelStart(log_level_t level) {
             prepend_string = "ALWAYS: ";
             break;
         case LOGLEVEL_NONE:
+            //!fallthrough
         default:
             //lint -e{237,506} This is intended to fail.
             assert(false);
+            return;
     } // switch (level)
     log_logMessageContinue_impl(level, prepend_string);
 } // log_logLevelStart()

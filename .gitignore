@@ -4,3 +4,11 @@
 _lint.txt
 doc/html
 tags
+# VisualStudio
+Debug
+Generated Files
+ipch
+Release
+*.opensdf
+*.sdf
+*.suo

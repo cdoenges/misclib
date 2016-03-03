@@ -65,6 +65,7 @@
 
 #undef MISCLIB_EXTERN
 #if defined(_WIN32)
+#if defined(MISCLIB_DLL)
 #ifdef BUILD_MISCLIB
 // Export symbols while building this part of the DLL.
 #define MISCLIB_EXTERN __declspec(dllexport)
@@ -72,6 +73,11 @@
 // Import symbols while using the DLL.
 #define MISCLIB_EXTERN __declspec(dllimport)
 #endif // !BUILD_MISCLIB
+#elif defined(MISCLIB_STATIC)
+#define MISCLIB_EXTERN
+#else
+#error One of MISCLIB_DLL or MISCLIB_STATIC must be defined for Windows builds.
+#endif
 #else
 #define MISCLIB_EXTERN extern
 #endif // !_WIN32

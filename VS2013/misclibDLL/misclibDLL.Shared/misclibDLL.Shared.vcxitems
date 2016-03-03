@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{0192f264-072e-4acb-ad4a-d054d5d98222}</ItemsProjectGuid>
+    <ItemsRootNamespace>misclibDLL</ItemsRootNamespace>
+    <ItemsProjectName>misclibDLL.Shared</ItemsProjectName>
+    <CodeSharingProject>248F659F-DAC5-46E8-AC09-60EC9FC95053</CodeSharingProject>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\alignment.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\base64.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\begetset.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\c99.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\factorial.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\hex.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\itoa.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\keyvalue.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\legetset.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\logging.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\portable_timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\ringbuffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\static_assert.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\tcputils.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\xtryxcatch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\misclibLIB\misclibLIB.Shared\pch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)misclibDLL.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\base64.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\begetset.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\factorial.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\ffactorial.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\hex.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\itoa.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\keyvalue.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\legetset.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\logging.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\ringbuffer.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\tcputils.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xtryxcatchdemo.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)misclibDLL.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)dllmain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\README.md" />
+    <None Include="$(MSBuildThisFileDirectory)HslDll.def" />
+  </ItemGroup>
+</Project>

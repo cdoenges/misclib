@@ -16,7 +16,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2010-2016, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,11 @@
 
 #include "keyvalue.h"
 
+
+#ifdef _MSC_VER
+// Disable warnings for functions VS C considers deprecated.
+#pragma warning(disable: 4996)
+#endif // _MSC_VER
 
 kv_object_t *kv_initializeIterator(kv_iterator_t *pIterator,
                                    kv_collection_t const *pCollection) {
@@ -130,10 +135,12 @@ kv_object_t *kv_createObject(kv_key_t pKey) {
     assert(NULL != pKey);
 
     if (NULL == (pObject = calloc(1ul, sizeof(kv_object_t)))) {
+        // Out of memory.
         return NULL;
     }
 
     if (NULL == (pObject->key = (kv_key_t) strdup((char *) pKey))) {
+        // Out of memory.
         free(pObject);
         return NULL;
     }
@@ -501,92 +508,3 @@ char const *kv_getString(kv_collection_t const *pCollection, kv_key_t const pKey
     assert(KV_VALUE_STRING == obj->type);
     return kv_getStringValueFromObject(obj);
 } // end kv_getString()
-
-
-
-#ifdef UNITTEST
-#include <stdio.h>
-
-int main(int argc, char *argv[]) {
-    kv_collection_t *myCollection;
-    kv_object_t *theObject;
-    kv_key_t theKey;
-
-#define KEY1 (kv_key_t) "key1"
-#define KEY2 (kv_key_t) "key2"
-#define KEY3 (kv_key_t) "key3"
-#define KEY4 (kv_key_t) "key4"
-#define KEY5 (kv_key_t) "key5"
-#define KEYx (kv_key_t) "keyX"
-#define INT 1234567
-#define FLOAT 123.45678
-#define POINTER ((void *) 0x12345678)
-#define STRING "Hello, world!"
-
-    // Create a collection.
-    myCollection = kv_createCollection();
-    assert(NULL != myCollection);
-
-    // Searching an empty collection should return NULL.
-    assert(kv_findObjectForKey(myCollection, KEY1) == NULL);
-
-    // Insert a key into the collection, find it, and check the value.
-    theObject = kv_insertBool(myCollection, KEY1, true);
-    assert(NULL != theObject);
-    assert(kv_findObjectForKey(myCollection, KEY1) == theObject);
-    assert(kv_getTypeFromObject(theObject) == KV_VALUE_BOOL);
-    assert(kv_getBoolValueFromObject(theObject) == true);
-    assert(kv_getBool(myCollection, KEY1) == true);
-
-    // Insert more keys into the collection.
-    theObject = kv_insertInt(myCollection, KEY2, INT);
-    assert(NULL != theObject);
-    theObject = kv_insertFloat(myCollection, KEY3, FLOAT);
-    assert(NULL != theObject);
-    theObject = kv_insertString(myCollection, KEY4, STRING);
-    assert(NULL != theObject);
-    theObject = kv_insertPointer(myCollection, KEY5, POINTER);
-    assert(NULL != theObject);
-
-    // Check all the values.
-    theObject = kv_findObjectForKey(myCollection, KEY2);
-    assert(NULL != theObject);
-    assert(kv_getTypeFromObject(theObject) == KV_VALUE_INTEGER);
-    assert(kv_getIntValueFromObject(theObject) == INT);
-    assert(kv_getInt(myCollection, KEY2) == INT);
-    theObject = kv_findObjectForKey(myCollection, KEY3);
-    assert(NULL != theObject);
-    assert(kv_getTypeFromObject(theObject) == KV_VALUE_FLOAT);
-    assert(kv_getFloatValueFromObject(theObject) == FLOAT);
-    assert(kv_getFloat(myCollection, KEY3) == FLOAT);
-    theObject = kv_findObjectForKey(myCollection, KEY4);
-    assert(NULL != theObject);
-    assert(kv_getTypeFromObject(theObject) == KV_VALUE_STRING);
-    assert(strcmp(kv_getStringValueFromObject(theObject), STRING) == 0);
-    assert(strcmp(kv_getString(myCollection, KEY4), STRING) == 0);
-    theObject = kv_findObjectForKey(myCollection, KEY5);
-    assert(NULL != theObject);
-    assert(kv_getTypeFromObject(theObject) == KV_VALUE_POINTER);
-    assert(kv_getPointerValueFromObject(theObject) == POINTER);
-    assert(kv_getPointer(myCollection, KEY5) == POINTER);
-
-    // Overwrite a value
-    theObject = kv_insertInt(myCollection, KEY2, 1-INT);
-    assert(NULL != theObject);
-    assert(kv_getIntValueFromObject(theObject) == 1-INT);
-
-    // Overwrite with the wrong type.
-//    assert(kv_insertBool(myCollection, KEY2, false) == NULL);
-
-    // Check getters for non-existing keys.
-    theObject = kv_findObjectForKey(myCollection, KEYx);
-    assert(NULL == theObject);
-    assert(kv_getBool(myCollection, KEYx) == false);
-    assert(kv_getInt(myCollection, KEYx) == 0);
-    assert(kv_getFloat(myCollection, KEYx) == 0.0);
-    assert(kv_getString(myCollection, KEYx) == NULL);
-    assert(kv_getPointer(myCollection, KEYx) == NULL);
-
-    puts("Unittest passed.");
-} // end main()
-#endif // UNITTEST

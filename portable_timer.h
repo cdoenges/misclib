@@ -60,7 +60,7 @@
 
 #include <stdbool.h>
 
-#ifdef WIN32    // Code for Microsoft Windows
+#ifdef _WIN32    // Code for Microsoft Windows
 #include <windows.h>
 #else           // Code for Unix systems.
 #include <sys/time.h>

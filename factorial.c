@@ -63,7 +63,6 @@
 
 #include "factorial.h"
 
-
 // The maximum factorial that can be held without an overflow depends on the
 // integer size.
 #if UINT_MAX > UINT32_MAX
@@ -76,6 +75,9 @@
 /** Maximum factorial size that fits into an (unsigned) integer. */
 #define MAX_FACTORIAL 8
 #endif
+
+const unsigned MAX_FACTORIAL_INPUT = MAX_FACTORIAL;
+
 
 static const unsigned m_factorials[] = {
 1u, // 0!
@@ -106,9 +108,8 @@ static const unsigned m_factorials[] = {
 };
 
 unsigned factorial(unsigned n) {
-    assert(n <= MAX_FACTORIAL);
 
-    if (n > MAX_FACTORIAL) {
+    if (n > MAX_FACTORIAL_INPUT) {
         // An overflow will occur, signal an error.
         return UINT_MAX;
     }
@@ -150,7 +151,7 @@ int main(int argc, char *argv[]) {
         f = f * n;
     }
 
-    if (n <= MAX_FACTORIAL) {
+    if (n <= MAX_FACTORIAL_INPUT) {
         fprintf(stderr, "FAIL: %u! != %u\n", n, f);
         return 1;
     } else if (factorial(n) != UINT_MAX) {

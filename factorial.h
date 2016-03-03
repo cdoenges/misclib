@@ -15,7 +15,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2012, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2012-2016, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,12 @@
     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <limits.h>
+
+
+/** The largest number of which a factorial can be computed. */
+extern const unsigned MAX_FACTORIAL_INPUT;
+
 
 //lint -esym(714, factorial, ffactorial)
 //lint -esym(759, factorial, ffactorial)
