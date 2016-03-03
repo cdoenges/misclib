@@ -1,14 +1,12 @@
-/** Fast ringbuffer implementation.
+/** Unit tests for the ringbuffer module.
 
+   @file unittest_ringbuffer.c
+   @ingroup misclib
 
-    @file ringbuffer.c
-    @ingroup misclib
+   @author Christian D&ouml;nges <cd@platypus-projects.de>
 
-    @author Christian D&ouml;nges <cd@platypus-projects.de>
-
-    @note The master repository for this file is at
-     <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
-
+   @note The master repository for this file is at
+    <a href="https://github.com/cdoenges/misclib">https://github.com/cdoenges/misclib</a>
 
     LICENSE
 
@@ -17,7 +15,7 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2011-2015, Christian Doenges (Christian D&ouml;nges) All rights
+    Copyright (c) 2016, Christian Doenges (Christian D&ouml;nges) All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -46,74 +44,58 @@
     LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-    This module was inspired by Jack Ganssle's Embedded Muse #110
-    http://www.ganssle.com/tem/tem110.pdf. Thank you Jack, Phil, and Keil!
-
  */
-
-#include <assert.h>
-#include <stdlib.h>
-
-
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include "ringbuffer.h"
-
-
-/** True if the value is a power of two. */
-#define isPowerOfTwo(value) ((TEMP__ = (value)) && !((TEMP__ -1) & TEMP__))
+#include "misclibTest.h"
 
 
 
-void ringbuffer_init(ringbuffer_t *pRB) {
-    int TEMP__ = 0;
-
-    assert(NULL != pRB->pBuffer);
-    assert(isPowerOfTwo(pRB->size));
-
-    pRB->headOffset = 0;
-    pRB->tailOffset = 0;
-} // ringbuffer_init()
-
-
-
-ringbuffer_status_t ringbuffer_put(ringbuffer_t *pRB, unsigned char newEntry) {
-
-    if (ringbuffer_length(pRB) >= pRB->size) {
-        return ring_full;
-    }
-
-    pRB->pBuffer[pRB->headOffset & (pRB->size -1)] = newEntry;
-    pRB->headOffset ++;
-
-    return ring_ok;
-} // ringbuffer_put()
+bool unittest_ringbuffer(void) {
+    uint8_t byteBuffer[128];
+    unsigned length;
+    ringbuffer_t rb = {
+        byteBuffer,
+        sizeof(byteBuffer),
+        0,
+        0
+    };
 
 
+    // Initialize the buffer.
+    ringbuffer_init(&rb);
 
-int ringbuffer_get(ringbuffer_t *pRB) {
-    unsigned char value;
-
-    if (ringbuffer_length(pRB) == 0) {
-        return ring_empty;
-    }
-
-    value = pRB->pBuffer[pRB->tailOffset & (pRB->size - 1)];
-    pRB->tailOffset ++;
-
-    return value;
-} // ringbuffer_get()
+    // Write bytes to the buffer, then read them.
+    for (length = 0;length <= sizeof(byteBuffer);length ++) {
+        ringbuffer_status_t rs;
+        unsigned rl, wl;
 
 
+        // Write 0..length bytes to the ringbuffer.
+        for (wl = 0;wl < length;wl ++) {
+            rs = ringbuffer_put(&rb, (length + wl) & 0xff);
+            if (wl < sizeof(byteBuffer)) {
+                expectTrue(ring_ok == rs);
+            } else {
+                expectTrue(ring_full == rs);
+            }
+        } // for wl
 
-int ringbuffer_peek(ringbuffer_t *pRB) {
-    unsigned char value;
+        // Read 1..length+1 bytes from the ringbuffer.
+        for (rl = 0;rl <= length;rl ++) {
+            int c = ringbuffer_get(&rb);
 
-    if (ringbuffer_length(pRB) == 0) {
-        return ring_empty;
-    }
+            if (rl < wl) {
+                expectTrue(c >= 0);
+                expectTrue(((length + rl) & 0xff) == c);
+            } else {
+                expectTrue(c < 0);
+            }
+        } // for rl
+    } // for length
 
-    value = pRB->pBuffer[pRB->tailOffset & (pRB->size - 1)];
-
-    return value;
-} // ringbuffer_get()
+    return true;
+} // unittest_ringbuffer()

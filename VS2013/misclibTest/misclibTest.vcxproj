@@ -95,6 +95,7 @@
     <ClCompile Include="..\..\unittest\misclibTest.c" />
     <ClCompile Include="..\..\unittest\unittest_factorial.c" />
     <ClCompile Include="..\..\unittest\unittest_keyvalue.c" />
+    <ClCompile Include="..\..\unittest\unittest_ringbuffer.c" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
