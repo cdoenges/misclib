@@ -61,11 +61,16 @@ static utfunc_t unittest_functions[] = {
     unittest_ringbuffer
 };
 
+static unsigned long nrTestsExecuted = 0;
+static unsigned long nrErrors = 0;
+
+void testFail(char *description) {
+    printf("FAIL %s\n", description);
+    nrErrors++;
+} // testFail()
+
 
 int main(int argc, char *argv[]) {
-    unsigned nrTestsExecuted;
-    unsigned nrErrors = 0;
-
 
     for (nrTestsExecuted = 0;
          nrTestsExecuted < sizeof(unittest_functions) / sizeof(utfunc_t);

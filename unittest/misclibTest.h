@@ -48,14 +48,17 @@
 
 #include <stdbool.h>
 
+extern void testFail(char *description);
+
+
 /** Aborts the current test case if the value is not true. */
-#define expectTrue(x) if (!(x)) { printf("ERROR: expectTrue("#x") failed.\n"); return false; }
+#define expectTrue(x) if (!(x)) { testFail("expectTrue("#x")"); return false; }
 /** Aborts the current test case if the value is not false. */
-#define expectFalse(x) if ((x)) { printf("ERROR: expectFalse("#x") failed.\n"); return false; }
+#define expectFalse(x) if ((x)) { testFail("expectFalse("#x")"); return false; }
 /** Aborts the current test case if the value is not NULL. */
-#define expectNull(x) if (NULL != (x)) { printf("ERROR: expectNull("#x") failed.\n"); return false; }
+#define expectNull(x) if (NULL != (x)) { testFail("expectNull("#x")"); return false; }
 /** Aborts the current test case if the value is NULL. */
-#define expectNotNull(x) if (NULL == (x)) { printf("ERROR: expectNotNull("#x") failed.\n"); return false; }
+#define expectNotNull(x) if (NULL == (x)) { testFail("expectNotNull("#x")"); return false; }
 
 
 /** Type definition for unit test functions. */

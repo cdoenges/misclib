@@ -69,7 +69,7 @@ bool unittest_ringbuffer(void) {
     ringbuffer_init(&rb);
 
     // Write bytes to the buffer, then read them.
-    for (length = 0;length <= sizeof(byteBuffer);length ++) {
+    for (length = 0;length <= sizeof(byteBuffer) + 1;length ++) {
         ringbuffer_status_t rs;
         unsigned rl, wl;
 
@@ -79,10 +79,16 @@ bool unittest_ringbuffer(void) {
             rs = ringbuffer_put(&rb, (length + wl) & 0xff);
             if (wl < sizeof(byteBuffer)) {
                 expectTrue(ring_ok == rs);
+                expectTrue(ringbuffer_length(&rb) == (wl + 1));
             } else {
                 expectTrue(ring_full == rs);
+                expectTrue(ringbuffer_length(&rb) == sizeof(byteBuffer));
             }
         } // for wl
+
+        if (wl > sizeof(byteBuffer)) {
+            wl = sizeof(byteBuffer);
+        }
 
         // Read 1..length+1 bytes from the ringbuffer.
         for (rl = 0;rl <= length;rl ++) {
@@ -91,6 +97,16 @@ bool unittest_ringbuffer(void) {
             if (rl < wl) {
                 expectTrue(c >= 0);
                 expectTrue(((length + rl) & 0xff) == c);
+                expectTrue(ringbuffer_length(&rb) == (wl - rl - 1));
+            } else {
+                expectTrue(c < 0);
+                expectTrue(ringbuffer_length(&rb) == 0);
+            }
+
+            c = ringbuffer_peek(&rb);
+            if (rl + 1 < wl) {
+                expectTrue(c >= 0);
+                expectTrue(((length + rl + 1) & 0xff) == c);
             } else {
                 expectTrue(c < 0);
             }
