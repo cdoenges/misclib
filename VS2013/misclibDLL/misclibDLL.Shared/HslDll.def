@@ -1,5 +1,7 @@
 EXPORTS
 ; Data
+g_xorshift64star	DATA
+g_xorshift1024star	DATA
 MAX_FACTORIAL_INPUT	DATA
 ; Public APIs
 beGetUint16

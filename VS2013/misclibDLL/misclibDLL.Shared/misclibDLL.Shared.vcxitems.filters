@@ -49,6 +49,9 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\misclibLIB\misclibLIB.Shared\pch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\prng.h">
+      <Filter>inc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)dllmain.cpp" />
@@ -87,6 +90,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xtryxcatchdemo.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xorshift64star.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xorshift1024star.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

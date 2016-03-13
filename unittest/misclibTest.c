@@ -58,6 +58,7 @@
 static utfunc_t unittest_functions[] = {
     unittest_factorial,
     unittest_keyvalue,
+    unittest_prng,
     unittest_ringbuffer
 };
 

@@ -47,5 +47,8 @@
     <ClCompile Include="..\..\unittest\unittest_ringbuffer.c">
       <Filter>Source Files\unittest</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\unittest\unittest_prng.c">
+      <Filter>Source Files\unittest</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

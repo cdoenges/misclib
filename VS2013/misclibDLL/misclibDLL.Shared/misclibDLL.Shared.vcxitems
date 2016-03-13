@@ -25,6 +25,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\legetset.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\logging.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\portable_timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\prng.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\ringbuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\static_assert.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\tcputils.h" />
@@ -45,6 +46,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\logging.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\ringbuffer.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\tcputils.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xorshift1024star.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xorshift64star.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\xtryxcatchdemo.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)misclibDLL.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)dllmain.cpp" />
