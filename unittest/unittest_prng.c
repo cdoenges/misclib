@@ -31,8 +31,7 @@
 
 
 
-static bool unittest_prng_xorshift64star(void) {
-    prng_impl_t const *pPrng = &g_xorshift64star;
+static bool unittest_prng_detail(prng_impl_t const *pPrng) {
     random_number_t r1, r2;
 
 
@@ -51,12 +50,13 @@ static bool unittest_prng_xorshift64star(void) {
     expectTrue(r1 != r2);
 
     return true;
-} // unittest_prng_xorshift64star()
+} // unittest_prng_detail()
 
 
 
 bool unittest_prng(void) {
-    expectTrue(unittest_prng_xorshift64star());
+    expectTrue(unittest_prng_detail(&g_xorshift64star));
+    expectTrue(unittest_prng_detail(&g_xorshift1024star));
 
     return true;
 } // unittest_prng()
