@@ -47,13 +47,21 @@
  */
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "keyvalue.h"
+#include "logging.h"
 #include "misclibTest.h"
 
 
+#ifdef _MSC_VER
+// Disable warnings for functions VS C considers deprecated.
+#pragma warning(disable: 4996)
+#endif // _MSC_VER
 
-bool unittest_keyvalue(void) {
+
+static bool unittest_keyvalue_functional(void) {
     kv_collection_t *pCollection;
     kv_object_t *theObject;
 
@@ -151,3 +159,52 @@ bool unittest_keyvalue(void) {
 
     return true;
 } // unittest_keyvalue()
+
+
+
+static bool unittest_keyvalue_performance_write(void) {
+    clock_t startclock, endclock;
+    kv_collection_t *pCollection;
+    int i;
+    double t;
+
+
+    srand(12345);
+    pCollection = kv_createCollection();
+    if (NULL == pCollection) {
+        log_logMessage(LOGLEVEL_ERROR, "kv_createCollection() failed: %s", strerror(errno));
+        return false;
+    }
+
+    log_logMessage(LOGLEVEL_INFO, "Starting kv_insertInt() timing ...");
+    startclock = clock();
+    for (i = 0; i < 100000; i++) {
+        char keyString[32];
+
+        sprintf(keyString, "something@%08x", i);
+        kv_insertInt(pCollection, keyString, i);
+    }
+
+    endclock = clock();
+
+    t = ((double) (endclock - startclock)) / (double) CLOCKS_PER_SEC;
+
+
+    log_logMessage(LOGLEVEL_INFO,
+                   "kv_insertInt()\t%.2g s (%.2g us/operation)",
+                   t, (t / i) / 1000000.0);
+
+
+    return true;
+} // unittest_keyvalue_performance_write()
+
+
+
+bool unittest_keyvalue(void) {
+    bool testsAllPassed = true;
+
+    testsAllPassed &= unittest_keyvalue_functional();
+    testsAllPassed &= unittest_keyvalue_performance_write();
+
+    return testsAllPassed;
+} // unittest_keyvalue_functional()

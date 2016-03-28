@@ -50,6 +50,7 @@
 #ifdef _WIN32
 #include "stdafx.h"
 #endif
+#include "logging.h"
 #include "misclibTest.h"
 
 
@@ -72,6 +73,8 @@ void testFail(char *description) {
 
 
 int main(int argc, char *argv[]) {
+
+    log_setStdoutLevel(LOGLEVEL_INFO);
 
     for (nrTestsExecuted = 0;
          nrTestsExecuted < sizeof(unittest_functions) / sizeof(utfunc_t);

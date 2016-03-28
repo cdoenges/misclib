@@ -12,12 +12,12 @@ HAVE_EXUBERANT_CTAGS := $(shell ctags --version | egrep Exuberant)
 endif
 
 
-CFLAGS = -MMD -g -O0 -Wall -Wno-unused-value -I. -DLOGGING_API_USES_VARIADIC_MACROS=0
+CFLAGS = -MMD -g -O0 -Wall -Wno-unused-value -I$(INC_DIR) -DLOGGING_API_USES_VARIADIC_MACROS=0
 
 ifdef HAVE_EXUBERANT_CTAGS
 # This is the best ctags implementation by far. If you don't have it, consider
 # getting it.
-CTAGS = ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags -R "$(PWD)"
+CTAGS = echo -e "$(INC_DIR)\n$(SRC_DIR)" | ctags --excmd=number --tag-relative=no --fields=+a+m+n+S -f tags --recurse -L -
 else
     ifdef HAVE_BBEDIT
     CTAGS = bbedit --maketags
@@ -33,25 +33,25 @@ DOXYGEN = doxygen
 LDFLAGS = -g
 LIBS = -lm
 
-OBJS = base64.o \
-begetset.o \
-factorial.o \
-ffactorial.o \
-hex.o \
-itoa.o \
-keyvalue.o \
-legetset.o \
-logging.o \
-portable_timer.o \
-ringbuffer.o \
-tcputils.o
+# Directories for build components.
+INC_DIR = inc
+OBJ_DIR = obj
+SRC_DIR = src
+
+# The object files that will be contained in the library.
+# They are stored in $(OBJ_DIR).
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+
+# The source file names are taken from $(SRC_DIR).
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+
+vpath %.c $(SRC_DIR)
+vpath %.h $(INC_DIR)
 
 #LINTPATH = $(HOME)/Applications/pclint
 LINTPATH=$(HOME)/pclint
 LINT = wine $(LINTPATH)/LINT-NT.EXE
-OBJDIR = objs
-SRCS = $(OBJS:.o=.c)
-TARGETS = misclib
+TARGETS = libmisclib.a
 
 # Directory containing dependency files (*.P).
 DEPDIR = .deps
@@ -60,8 +60,9 @@ df = $(DEPDIR)/$(*F)
 
 
 # Targets
-misclib: tags $(OBJS)
-	$(CC) $(LDFLAGS) -o misclib $(OBJS) $(LIBS)
+libmisclib.a: $(OBJS)
+	@echo "[Link (Static)]"
+	$(AR) rcs $@ $^
 
 tags: $(SRCS)
 	$(CTAGS)
@@ -94,18 +95,22 @@ $(LINTPATH)/lint_cmac.h:
 
 .PHONY: all
 # Builds everything.
-all: misclib tags lint docs
+all: $(TARGETS) tags lint docs
 
 .PHONY: clean
 # Removes all generated files.
 clean:
-	-rm $(TARGETS) *.o tags lint/lint_cmac.h lint/gcc-include-path.lnt
-	-rm -Rf $(DEPDIR)
+	-rm -f $(TARGETS) tags lint/lint_cmac.h lint/gcc-include-path.lnt
+	-rm -Rf $(DEPDIR) $(OBJ_DIR)
 	-rm -Rf doc/html doc/rtf
 
 # Create DEPDIR if it does not exist.
 $(DEPDIR):
 	mkdir $(DEPDIR)
+
+# Create OBJ_DIR if it does not exist.
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
 
 # Targets including this dependency will always be built.
 force: ;
@@ -114,7 +119,7 @@ force: ;
 # Rules
 # Build .o from .c by running $(CC) $(CFLAGS) –c $(.SOURCE)
 # Creates dependencies in $(DEPDIR) automatically.
-%.o : %.c $(DEPDIR)
+$(OBJ_DIR)/%.o : %.c $(DEPDIR) $(OBJ_DIR)
 	$(COMPILE.c) -MMD -MF $(DEPDIR)/$*.d -o $@ $<
 
 # Include the dependencies we just built above.

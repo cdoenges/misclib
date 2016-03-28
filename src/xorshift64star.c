@@ -61,7 +61,7 @@ void prng_xorshift64star_jump(void) {
 
 
 const prng_impl_t g_xorshift64star = {
-    (char *) &state,
+    (uint8_t * const) &state,
     sizeof(state),
     prng_xorshift64star_next,
     prng_xorshift64star_jump
