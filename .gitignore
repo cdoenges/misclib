@@ -3,6 +3,7 @@
 .deps
 _lint.txt
 doc/html
+libmisclib.a
 tags
 # VisualStudio
 Debug

@@ -28,7 +28,7 @@
     limitations under the License.
  */
 #include <stdint.h>
-#include <strings.h>
+#include <string.h>
 
 typedef uint64_t random_number_t;
 

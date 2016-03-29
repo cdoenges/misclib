@@ -191,7 +191,7 @@ static bool unittest_keyvalue_performance_write(void) {
 
 
     log_logMessage(LOGLEVEL_INFO,
-                   "kv_insertInt()\t%.2g s (%.2g us/operation)",
+                   "kv_insertInt()\t%.2f s (%f us/operation)",
                    t, (t / i) / 1000000.0);
 
 
