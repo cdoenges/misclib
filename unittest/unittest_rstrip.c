@@ -26,21 +26,24 @@
  */
 #include <stdbool.h>
 #include <stdio.h>
+#include "logging.h"
 #include "misclibTest.h"
 #include "stringfunctions.h"
 
 
 
-static const unsigned NUMBER_OF_TEST_VECTORS = 8;
+static const unsigned NUMBER_OF_TEST_VECTORS = 9;
 static char *testvector[NUMBER_OF_TEST_VECTORS] = {
     "NOWHITESPACE",
     "SPACEATEND ",
     "SPACEATEND123., ",
     "WHITESPACESATEND \t\n\v\f\r ",
+    " \t\n\v\f\r WHITESPACESATSTART"
     "SPACES IN STRING",
     "   SPACESINFRONT",
     "\rWHITESPACE \tALL\nOVER\v",
-    "NON-ASCII STRING\xfb\xac\xe4 "
+    "NON-ASCII STRING\xfb\xac\xe4 ",
+    " \r\f\v\n\t "
 };
 
 static char *expected[NUMBER_OF_TEST_VECTORS] = {
@@ -48,10 +51,12 @@ static char *expected[NUMBER_OF_TEST_VECTORS] = {
     "SPACEATEND",
     "SPACEATEND123.,",
     "WHITESPACESATEND",
+    " \t\n\v\f\r WHITESPACESATSTART"
     "SPACES IN STRING",
     "   SPACESINFRONT",
     "\rWHITESPACE \tALL\nOVER",
-    "NON-ASCII STRING\xfb\xac\xe4"
+    "NON-ASCII STRING\xfb\xac\xe4",
+    ""
 };
 
 
@@ -65,8 +70,16 @@ bool unittest_rstrip(void) {
         strncpy(testbuffer, testvector[i], sizeof(testbuffer));
         l = rstrip(testbuffer);
 //        printf("Test #%d: %d - '%s'\n", i, l, testbuffer);
-        if ((strlen(expected[i]) != l) || (strcmp(testbuffer, expected[i]) != 0)) {
-            printf("Failed test #%d\n", i);
+        if (strlen(expected[i]) != l) {
+            log_logMessage(LOGLEVEL_ERROR,
+                    "rstrip() returned %u, expected %u.",
+                    l, strlen(expected[i]));
+            failed ++;
+        } else if (strcmp(testbuffer, expected[i]) != 0) {
+            log_logMessage(LOGLEVEL_ERROR, "rstrip() returned wrong string:");
+            log_logData(LOGLEVEL_ERROR, testvector[i], strlen(testvector[i]), "Test vector", 16);
+            log_logData(LOGLEVEL_ERROR, expected[i], strlen(expected[i]), "Expected   ", 16);
+            log_logData(LOGLEVEL_ERROR, testbuffer, strlen(testbuffer), "Actual     ", 16);
             failed++;
         } // if failed
     } // for i
