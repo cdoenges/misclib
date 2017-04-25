@@ -188,6 +188,14 @@ extern bool log_closeLogfile(void);
 
 
 
+/** Flushes the buffer of the log file.
+
+    @pre A log file must have been opened using #log_openLogfile.
+*/
+extern void log_flushLogfile(void);
+
+
+
 /** Sets the minimum message level logged to the log file (if open),
  * lower messages are ignored.
  *

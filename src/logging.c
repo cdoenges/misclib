@@ -138,6 +138,14 @@ bool log_closeLogfile(void) {
 
 
 
+void log_flushLogfile(void) {
+    assert(NULL != logFileHandle);
+
+    fflush(logFileHandle);
+} // log_flushLogfile()
+
+
+
 void log_setFileLevel(log_level_t level) {
     assert((level >= LOGLEVEL_NONE) && (level < LOGLEVEL_ALWAYS));
 
