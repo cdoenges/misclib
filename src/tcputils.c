@@ -314,13 +314,13 @@ static void tcp_log_error(char const *message) {
     } // switch errorCode
 
     // Windows nicely formats error messages by appending a period.
-    log_logMessage((level, "%s: %s(%d) - %s",
+    log_logMessage(level, "%s: %s(%d) - %s",
                    message, errorStr, errorCode,
-                   winsock_strerror(errorCode)));
+                   winsock_strerror(errorCode));
 #else // POSIX
-    log_logMessage((LOGLEVEL_ERROR, "%s: %s.",
+    log_logMessage(LOGLEVEL_ERROR, "%s: %s.",
                    message,
-                   strerror(errno)));
+                   strerror(errno));
 #endif // POSIX
 } // tcp_log_error()
 
@@ -416,7 +416,7 @@ int tcp_client_connect(char const *hostname, int port) {
     struct  hostent *host;
 
 
-    log_logMessage((LOGLEVEL_DEBUG1, "tcp_client_connect('%s', %d)", hostname, port));
+    log_logMessage(LOGLEVEL_DEBUG1, "tcp_client_connect('%s', %d)", hostname, port);
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons((unsigned short) port);
     if ((host = gethostbyname(hostname)) == NULL) {
@@ -551,7 +551,7 @@ ssize_t tcp_send_and_receive(int theSocket,
 
 int tcp_connect_to_server(int port) {
     SOCKET sd, sc;
-    struct sockaddr_in server = { 0 };
+    struct sockaddr_in server;
     struct sockaddr_in client;
     socklen_t clientSize = sizeof(client);
     char portString[10];    // much too long
@@ -562,10 +562,10 @@ int tcp_connect_to_server(int port) {
 #endif // _WIN32
 
 
-    log_logMessage((LOGLEVEL_DEBUG1, "tcp_connect_to_server(%d)", port));
+    log_logMessage(LOGLEVEL_DEBUG1, "tcp_connect_to_server(%d)", port);
     assert((port >= 0) && (port <= 65535));
     if (NULL == itoa(port, portString, 10)) {
-        log_logMessage((LOGLEVEL_ERROR, "itoa(%d) failed.", port));
+        log_logMessage(LOGLEVEL_ERROR, "itoa(%d) failed.", port);
         return -6;
     }
 
@@ -578,7 +578,7 @@ int tcp_connect_to_server(int port) {
     // Resolve the local address and port to be used by the server
     gaiResult = getaddrinfo(NULL, portString, &hints, &result);
     if (0 != gaiResult) {
-        log_logMessage((LOGLEVEL_ERROR, "getaddrinfo failed: %d (%s)", gaiResult, gai_strerror(gaiResult)));
+        log_logMessage(LOGLEVEL_ERROR, "getaddrinfo failed: %d (%s)", gaiResult, gai_strerror(gaiResult));
         return -1;
     }
 
@@ -604,6 +604,7 @@ int tcp_connect_to_server(int port) {
 #endif // _WIN32
 
     // Configure and bind the socket.
+    memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
     server.sin_port = htons((unsigned short) port);
@@ -621,7 +622,7 @@ int tcp_connect_to_server(int port) {
         (void) closesocket(sd);
         return -3;
     }
-    log_logMessage((LOGLEVEL_DEBUG1, "Server socket running on port %d", port));
+    log_logMessage(LOGLEVEL_DEBUG1, "Server socket running on port %d", port);
 
     // Wait until we get a connection.
     if ((sc = accept(sd, (struct sockaddr *) &client, &clientSize)) < 0) {
@@ -630,7 +631,7 @@ int tcp_connect_to_server(int port) {
         (void) closesocket(sd);
         return -4;
     }
-    log_logMessage((LOGLEVEL_DEBUG1, "Server socket accepted connection from %s:%d", inet_ntoa(client.sin_addr), ntohs(client.sin_port)));
+    log_logMessage(LOGLEVEL_DEBUG1, "Server socket accepted connection from %s:%d", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
     return (int) sc;
 } // tcp_connect_to_server()
@@ -642,12 +643,13 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
     struct sockaddr_in server;
 
 
-    log_logMessage((LOGLEVEL_DEBUG1, "tcp_server(%d, @0x%p, %s))",
-        port, pServerFunction, multiThreaded ? "true" : "false"));
+    log_logMessage(LOGLEVEL_DEBUG1,
+        "tcp_server(%d, @0x%p, %s)",
+        port, pServerFunction, multiThreaded ? "true" : "false");
 
 #ifdef _WIN32
     if (multiThreaded) {
-        log_logMessage((LOGLEVEL_ERROR, "tcp_server() multi-threading not supported on win32."));
+        log_logMessage(LOGLEVEL_ERROR, "tcp_server() multi-threading not supported on win32.");
         return -5;
     }
 #endif // _WIN32
@@ -677,7 +679,7 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
         return -3;
     }
 
-    log_logMessage((LOGLEVEL_INFO, "Server running on port %d", port));
+    log_logMessage(LOGLEVEL_INFO, "Server running on port %d", port);
     for (;;) {
         struct sockaddr_in client;
         socklen_t clientSize = sizeof(client);
@@ -709,14 +711,14 @@ int tcp_server(int port, serverfunction pServerFunction, bool multiThreaded) {
         {
             bool result = pServerFunction(sc, &client);
             (void) closesocket(sc);
-            log_logMessage((LOGLEVEL_DEBUG1, "Closed connection on port %d", port));
+            log_logMessage(LOGLEVEL_DEBUG1, "Closed connection on port %d", port);
             if (result) {
                 break;
             }
         }
     } // forever
 
-    log_logMessage((LOGLEVEL_INFO, "Terminating server running on port %d", port));
+    log_logMessage(LOGLEVEL_INFO, "Terminating server running on port %d", port);
     (void) closesocket(sd);
     return 0;
 } // tcp_server()
@@ -733,22 +735,22 @@ int tcp_server_multiport(unsigned nrOfSockets,
 
 
     // Create some fancy debug output.
-    log_logMessageStart((LOGLEVEL_DEBUG1, "tcp_server_multiport(%u, [", nrOfSockets));
+    log_logMessageStart(LOGLEVEL_DEBUG1, "tcp_server_multiport(%u, [", nrOfSockets);
     for (i = 0;i < nrOfSockets;i ++) {
-        log_logMessageContinue((LOGLEVEL_DEBUG1, "{ %d, @0x%p, @0x%p, @0x%p }",
+        log_logMessageContinue(LOGLEVEL_DEBUG1, "{ %d, @0x%p, @0x%p, @0x%p }",
                                serversockets[i].port,
                                serversockets[i].pFctConnect,
                                serversockets[i].pFctReceive,
-                               serversockets[i].pFctDisconnect));
+                               serversockets[i].pFctDisconnect);
         if (i > 1) {
-            log_logMessageContinue((LOGLEVEL_DEBUG1, ", "));
+            log_logMessageContinue(LOGLEVEL_DEBUG1, ", ");
         }
     } // for i
-    log_logMessageContinue((LOGLEVEL_DEBUG1, "])\n"));
+    log_logMessageContinue(LOGLEVEL_DEBUG1, "])\n");
 
 
     if (0 == nrOfSockets) {
-        log_logMessage((LOGLEVEL_WARNING, "No server ports specified."));
+        log_logMessage(LOGLEVEL_WARNING, "No server ports specified.");
         return 0;
     }
 
@@ -766,9 +768,9 @@ int tcp_server_multiport(unsigned nrOfSockets,
         server.sin_port = htons(serversockets[i].port);
         if ((serversockets[i].listenSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
             // An error occurred, errno will specify the reason.
-            log_logMessage((LOGLEVEL_ERROR,
+            log_logMessage(LOGLEVEL_ERROR,
                            "tcp_server_multiport(): socket() failed for socket #%d: %s",
-                           i, strerror(errno)));
+                           i, strerror(errno));
             errorOccurred = -1;
             break;
         }
@@ -778,18 +780,18 @@ int tcp_server_multiport(unsigned nrOfSockets,
                        SOL_SOCKET,
                        SO_REUSEADDR,
                        (char *)&option, sizeof(option)) != 0) {
-            log_logMessage((LOGLEVEL_ERROR,
+            log_logMessage(LOGLEVEL_ERROR,
                            "tcp_server_multiport(): setsockopt() failed for socket #%d: %s",
-                           i, strerror(errno)));
+                           i, strerror(errno));
         }
 
         // Bind the socket to an address.
         if (bind(serversockets[i].listenSocket,
                  (struct sockaddr *) &server, sizeof(server)) != 0) {
             // Binding to the socket failed.
-            log_logMessage((LOGLEVEL_ERROR,
+            log_logMessage(LOGLEVEL_ERROR,
                            "tcp_server_multiport(): bind() failed for socket #%d: %s",
-                           i, strerror(errno)));
+                           i, strerror(errno));
             errorOccurred = -2;
             break;
         }
@@ -814,9 +816,9 @@ int tcp_server_multiport(unsigned nrOfSockets,
         if (maxFd <= serversockets[i].listenSocket) {
             maxFd = serversockets[i].listenSocket + 1;
         }
-        log_logMessage((LOGLEVEL_INFO,
+        log_logMessage(LOGLEVEL_INFO,
                        "Multi-port server listening on port %d with socket #%d",
-                       serversockets[i].port, i));
+                       serversockets[i].port, i);
     } // for i
 
 
@@ -845,7 +847,7 @@ int tcp_server_multiport(unsigned nrOfSockets,
         // Use select() to wait until something interesting occurs.
         nrSelectEvents = select(maxFd, &readSet, NULL /*&writeSet*/, &errorSet, &timeout);
         if (0 == nrSelectEvents) {
-//            log_logMessage((LOGLEVEL_DEBUG1, "timeout in select()"));
+//            log_logMessage(LOGLEVEL_DEBUG1, "timeout in select()");
             continue;
         }
         if (nrSelectEvents < 0) {
@@ -860,9 +862,9 @@ int tcp_server_multiport(unsigned nrOfSockets,
             if (0 != FD_ISSET(serversockets[i].listenSocket, &readSet)) {
                 nrSelectEvents--;
                 // Accept the connection.
-                log_logMessage((LOGLEVEL_DEBUG1,
+                log_logMessage(LOGLEVEL_DEBUG1,
                     "tcp_server_multiport(): server socket #%d received connection attempt.",
-                    i));
+                    i);
                 serversockets[i].clientSize = sizeof(serversockets[i].client);
                 serversockets[i].clientSocket = accept(serversockets[i].listenSocket,
                                                        (struct sockaddr *) &serversockets[i].client,
@@ -872,10 +874,10 @@ int tcp_server_multiport(unsigned nrOfSockets,
                     errorOccurred = -6;
                     break;
                 }
-                log_logMessage((LOGLEVEL_DEBUG1,
+                log_logMessage(LOGLEVEL_DEBUG1,
                                "tcp_server_multiport(): accepted connection from %s:%d",
                                inet_ntoa(serversockets[i].client.sin_addr),
-                               ntohs(serversockets[i].client.sin_port)));
+                               ntohs(serversockets[i].client.sin_port));
 
                 // Try to set non-blocking mode.
                 if (!tcp_set_socket_nonblocking(serversockets[i].clientSocket)) {
@@ -892,19 +894,19 @@ int tcp_server_multiport(unsigned nrOfSockets,
                  if (NULL != serversockets[i].pFctConnect) {
                     if (serversockets[i].pFctConnect(serversockets[i].clientSocket,
                                                      &serversockets[i].client)) {
-                        log_logMessage((LOGLEVEL_DEBUG1, "tcp_server_multiport(): callback failed."));
+                        log_logMessage(LOGLEVEL_DEBUG1, "tcp_server_multiport(): callback failed.");
                     }
                  }
             } // if listenSocket read
 
             if (0 != FD_ISSET(serversockets[i].clientSocket, &readSet)) {
                 nrSelectEvents--;
-                log_logMessage((LOGLEVEL_DEBUG1,
+                log_logMessage(LOGLEVEL_DEBUG1,
                                "tcp_server_multiport(): client socket #%d became readable.",
-                               i));
+                               i);
                 if (serversockets[i].pFctReceive(serversockets[i].clientSocket,
                                                  &serversockets[i].client)) {
-                    log_logMessage((LOGLEVEL_DEBUG1, "tcp_server_multiport(): close client connection."));
+                    log_logMessage(LOGLEVEL_DEBUG1, "tcp_server_multiport(): close client connection.");
                     FD_CLR(serversockets[i].clientSocket, &masterSet);
                     closesocket(serversockets[i].clientSocket);
                     if (NULL != serversockets[i].pFctDisconnect) {
@@ -925,9 +927,9 @@ int tcp_server_multiport(unsigned nrOfSockets,
                     tcp_log_error("tcp_server_multiport(): getsockopt() failed");
                     errorOccurred = -8;
                 }
-                log_logMessage((LOGLEVEL_ERROR,
+                log_logMessage(LOGLEVEL_ERROR,
                                "tcp_server_multiport(): error on server socket: %s",
-                               strerror(err)));
+                               strerror(err));
                 closesocket(serversockets[i].listenSocket);
                 serversockets[i].listenSocket = INVALID_SOCKET;
             } // if listenSocket error
@@ -944,13 +946,13 @@ int tcp_server_multiport(unsigned nrOfSockets,
                     errorOccurred = -9;
                 }
                 if (err > 0) {
-                    log_logMessage((LOGLEVEL_ERROR,
+                    log_logMessage(LOGLEVEL_ERROR,
                         "tcp_server_multiport(): error on client socket #%d: %s",
-                        i, strerror(err)));
+                        i, strerror(err));
                 } else {
-                    log_logMessage((LOGLEVEL_INFO,
+                    log_logMessage(LOGLEVEL_INFO,
                         "tcp_server_multiport() connection on socket #%d closed.",
-                        i));
+                        i);
                 }
                 FD_CLR(serversockets[i].clientSocket, &masterSet);
                 closesocket(serversockets[i].clientSocket);
@@ -1021,38 +1023,38 @@ bool multiechoserver(int theSocket,  struct sockaddr_in *from) {
     int numRxBytes;
 
 
-    log_logMessage((LOGLEVEL_DEBUG1,
+    log_logMessage(LOGLEVEL_DEBUG1,
                    "multiechoserver(%d): Serving %s:%d",
                    theSocket,
-                   inet_ntoa(from->sin_addr), ntohs(from->sin_port)));
+                   inet_ntoa(from->sin_addr), ntohs(from->sin_port));
 
     numRxBytes = recv(theSocket, rxTxBuffer, sizeof(rxTxBuffer), 0);
     if (numRxBytes > 0) {
         rxTxBuffer[numRxBytes] = '\0';
-        log_logMessage((LOGLEVEL_INFO,
+        log_logMessage(LOGLEVEL_INFO,
                        "multiechoserver(%d): %s:%d -> '%s'",
                        theSocket,
                        inet_ntoa(from->sin_addr), ntohs(from->sin_port),
-                       rxTxBuffer));
+                       rxTxBuffer);
         rxTxBuffer[0] = '+';
         if (send(theSocket, rxTxBuffer, numRxBytes, 0) != numRxBytes) {
-            log_logMessage((LOGLEVEL_ERROR,
+            log_logMessage(LOGLEVEL_ERROR,
                            "multiechoserver(%d): send() failed to %s:%d: %s",
                            theSocket,
                            inet_ntoa(from->sin_addr), ntohs(from->sin_port),
-                           strerror(errno)));
+                           strerror(errno));
         } else {
-            log_logMessage((LOGLEVEL_INFO,
+            log_logMessage(LOGLEVEL_INFO,
                            "multiechoserver(%d): %s:%d <- '%s'",
                            theSocket,
                            inet_ntoa(from->sin_addr), ntohs(from->sin_port),
-                           rxTxBuffer));
+                           rxTxBuffer);
         } // send() ok
     } else {
-        log_logMessage((LOGLEVEL_INFO,
+        log_logMessage(LOGLEVEL_INFO,
                        "multiechoserver(%d): Disconnected from %s:%d",
                        theSocket,
-                       inet_ntoa(from->sin_addr), ntohs(from->sin_port)));
+                       inet_ntoa(from->sin_addr), ntohs(from->sin_port));
         return true;
     }
 
@@ -1210,27 +1212,27 @@ int main(int argc, char *argv[]) {
 
 
     snprintf(sendBuffer, sizeof(sendBuffer), "Test string for cs1");
-    log_logMessage((LOGLEVEL_INFO, "cs1 -> '%s'\n", sendBuffer));
+    log_logMessage(LOGLEVEL_INFO, "cs1 -> '%s'\n", sendBuffer);
     receiveLength = tcp_send_and_receive(cs1,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
     receiveBuffer[receiveLength] = '\0';
-    log_logMessage((LOGLEVEL_INFO, "cs1 <- '%s'", receiveBuffer));
+    log_logMessage(LOGLEVEL_INFO, "cs1 <- '%s'", receiveBuffer);
 
     // Give it some more time.
     sleep(2);
     snprintf(sendBuffer, sizeof(sendBuffer), "Test string for cs2.");
-    log_logMessage((LOGLEVEL_INFO, "cs2 -> '%s'", sendBuffer));
+    log_logMessage(LOGLEVEL_INFO, "cs2 -> '%s'", sendBuffer);
     receiveLength = tcp_send_and_receive(cs2,
                         sendBuffer, strlen(sendBuffer),
                         receiveBuffer, sizeof(receiveBuffer));
     receiveBuffer[receiveLength] = '\0';
-    log_logMessage((LOGLEVEL_INFO, "cs2 <- '%s'", receiveBuffer));
+    log_logMessage(LOGLEVEL_INFO, "cs2 <- '%s'", receiveBuffer);
 
     tcp_close(cs2);
     tcp_close(cs1);
 
-    log_logMessage((LOGLEVEL_WARNING, "terminating main()"));
+    log_logMessage(LOGLEVEL_WARNING, "terminating main()");
     exit(0);
 } // main()
 #endif // TCPTEST

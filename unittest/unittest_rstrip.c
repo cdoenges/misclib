@@ -58,7 +58,7 @@ static char *expected[NUMBER_OF_TEST_VECTORS] = {
 bool unittest_rstrip(void) {
     char testbuffer[256];
     size_t l;
-    int i;
+    unsigned i;
     int failed = 0;
 
     for (i = 0;i < NUMBER_OF_TEST_VECTORS;i ++) {

@@ -23,9 +23,9 @@
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
- 
+
       http://www.apache.org/licenses/LICENSE-2.0
- 
+
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -80,10 +80,10 @@ void prng_xorshift1024star_jump() {
 	uint64_t t[NR_STATE_WORDS] = { 0 };
 
 
-	for(int i = 0; i < sizeof JUMP / sizeof *JUMP; i++) {
-		for(int bit_index = 0; bit_index < 64; bit_index++) {
+	for (unsigned i = 0; i < sizeof JUMP / sizeof *JUMP; i++) {
+		for (unsigned bit_index = 0; bit_index < 64; bit_index++) {
 			if (JUMP[i] & 1ULL << bit_index) {
-				for(int j = 0; j < NR_STATE_WORDS; j++) {
+				for (unsigned j = 0; j < NR_STATE_WORDS; j++) {
 					t[j] ^= state[(j + state_word_index) & STATE_WORD_MASK];
 				} // for j
 			} // if
@@ -91,7 +91,7 @@ void prng_xorshift1024star_jump() {
 		} // for bit_index
 	} // for i
 
-	for(int j = 0;j < NR_STATE_WORDS;j++) {
+	for(unsigned j = 0;j < NR_STATE_WORDS;j++) {
 		state[(j + state_word_index) & STATE_WORD_MASK] = t[j];
 	} // for j
 } // prng_xorshift1024star_jump()

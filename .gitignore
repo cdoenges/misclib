@@ -4,7 +4,11 @@
 _lint.txt
 doc/html
 libmisclib.a
+libmisclib.so
+objs
 tags
+unittest/misclibTest
+
 # VisualStudio
 Debug
 Generated Files
@@ -13,3 +17,6 @@ Release
 *.opensdf
 *.sdf
 *.suo
+
+# XCode / clang
+*.dSYM

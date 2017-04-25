@@ -25,7 +25,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
-
+#ifdef _WIN32
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
@@ -96,3 +96,4 @@ fail:
     errno = ENOSYS;
     return -1;
 } // clock_gettime()
+#endif // _WIN32
