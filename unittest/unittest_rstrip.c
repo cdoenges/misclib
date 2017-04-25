@@ -10,7 +10,7 @@
 
     LICENSE
 
-    Copyright 2016 Christian Doenges (Christian D&ouml;nges)
+    Copyright 2016, 2017 Christian Doenges (Christian D&ouml;nges)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@
 
 
 
-static const unsigned NUMBER_OF_TEST_VECTORS = 9;
+static const unsigned NUMBER_OF_TEST_VECTORS = 10;
 static char *testvector[NUMBER_OF_TEST_VECTORS] = {
     "NOWHITESPACE",
     "SPACEATEND ",
     "SPACEATEND123., ",
     "WHITESPACESATEND \t\n\v\f\r ",
-    " \t\n\v\f\r WHITESPACESATSTART"
+    " \t\n\v\f\r WHITESPACESATSTART",
     "SPACES IN STRING",
     "   SPACESINFRONT",
     "\rWHITESPACE \tALL\nOVER\v",
@@ -51,7 +51,7 @@ static char *expected[NUMBER_OF_TEST_VECTORS] = {
     "SPACEATEND",
     "SPACEATEND123.,",
     "WHITESPACESATEND",
-    " \t\n\v\f\r WHITESPACESATSTART"
+    " \t\n\v\f\r WHITESPACESATSTART",
     "SPACES IN STRING",
     "   SPACESINFRONT",
     "\rWHITESPACE \tALL\nOVER",
@@ -66,6 +66,7 @@ bool unittest_rstrip(void) {
     unsigned i;
     int failed = 0;
 
+    log_logMessage(LOGLEVEL_INFO, "Testing rstrip()");
     for (i = 0;i < NUMBER_OF_TEST_VECTORS;i ++) {
         strncpy(testbuffer, testvector[i], sizeof(testbuffer));
         l = rstrip(testbuffer);

@@ -10,14 +10,14 @@
 
     LICENSE
 
-    Copyright 2016 Christian Doenges (Christian D&ouml;nges)
+    Copyright 2016, 2017 Christian Doenges (Christian D&ouml;nges)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
- 
+
       http://www.apache.org/licenses/LICENSE-2.0
- 
+
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +26,9 @@
  */
 #include <stdbool.h>
 #include <stdio.h>
-#include "prng.h"
+#include "logging.h"
 #include "misclibTest.h"
+#include "prng.h"
 
 
 
@@ -55,6 +56,8 @@ static bool unittest_prng_detail(prng_impl_t const *pPrng) {
 
 
 bool unittest_prng(void) {
+    log_logMessage(LOGLEVEL_INFO, "Testing PRNG");
+
     expectTrue(unittest_prng_detail(&g_xorshift64star));
     expectTrue(unittest_prng_detail(&g_xorshift1024star));
 
