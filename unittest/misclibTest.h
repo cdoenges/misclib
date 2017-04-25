@@ -67,6 +67,7 @@ typedef bool(*utfunc_t)(void);
 
 extern bool unittest_factorial(void);
 extern bool unittest_keyvalue(void);
+extern bool unittest_lstrip(void);
 extern bool unittest_ringbuffer(void);
 extern bool unittest_prng(void);
 extern bool unittest_rstrip(void);
