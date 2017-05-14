@@ -71,7 +71,7 @@ void pt_start(portable_timer_t *pt) {
     pt->running = true;
 
     // Start the timer by marking the start time.
-#ifdef WIN32
+#ifdef _WIN32
     QueryPerformanceFrequency(&pt->frequency);
     QueryPerformanceCounter(&pt->startTime);
 #else
@@ -87,7 +87,7 @@ void pt_stop(portable_timer_t *pt) {
     assert(pt->running);
 
     // Stop the timer and mark the stop time.
-#ifdef WIN32
+#ifdef _WIN32
     QueryPerformanceCounter(&pt->endTime);
 #else
     // Ignore the error, if any.
@@ -115,17 +115,17 @@ unsigned long pt_elapsed_us(portable_timer_t *pt) {
 
     if (pt->running) {
         // If the timer is running, we have to sample it.
-#ifdef WIN32
-        QueryPerformanceCounter(&pt->endTimer);
+#ifdef _WIN32
+        QueryPerformanceCounter(&pt->endTime);
 #else
         // Ignore the error, if any.
         (void) gettimeofday(&pt->endTime, NULL);
 #endif // !WIN32
     } // if running
 
-#ifdef WIN32
-    startMicros = pt->startTimer.QuadPart * 1000000.0 / pt->frequency.QuadPart;
-    endMicros   = pt->endTimer.QuadPart * 1000000.0 / pt->frequency.QuadPart;
+#ifdef _WIN32
+    startMicros = pt->startTime.QuadPart * 1000000.0 / pt->frequency.QuadPart;
+    endMicros   = pt->endTime.QuadPart * 1000000.0 / pt->frequency.QuadPart;
 #else
     startMicros = pt->startTime.tv_sec * 1000000.0 + pt->startTime.tv_usec;
     endMicros   = pt->endTime.tv_sec * 1000000.0 + pt->endTime.tv_usec;
@@ -137,7 +137,7 @@ unsigned long pt_elapsed_us(portable_timer_t *pt) {
 
 
 void pt_sleep_ms(unsigned long milliseconds) {
-#ifdef WIN32
+#ifdef _WIN32
     Sleep(milliseconds);
 #else // requires _POSIX_C_SOURCE >= 199309L
     time_t seconds = (time_t) (milliseconds / 1000);

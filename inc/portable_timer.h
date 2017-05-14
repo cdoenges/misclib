@@ -74,7 +74,7 @@
 typedef struct {
     /** True if the timer is running, false if stopped. */
     bool running;    
-#ifdef WIN32
+#ifdef _WIN32
     LARGE_INTEGER frequency;      // Counter frequency in ticks per second.
     LARGE_INTEGER startTime;      // Counter when timer was started.
     LARGE_INTEGER endTime;        // Counter when timer was stopped.

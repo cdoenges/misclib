@@ -45,7 +45,7 @@
 int clock_gettime(int option, struct timespec *pTS) {
     static double ticks2nano;               // number of ticks per nanosecond
     static LARGE_INTEGER pc_start_ticks;    // starting value of the performance counter
-    static LARGE_INTEGER pc_ticks_per_second = 0;   // performance counter ticks per second
+    static LARGE_INTEGER pc_ticks_per_second = { .QuadPart = 0 };   // performance counter ticks per second
     static struct timespec ts_start;        // Unix start time.
     LARGE_INTEGER pc_current_ticks;         // Current performance counter ticks.
     LARGE_INTEGER pc_delta_ticks;           // Elapsed performance counter ticks.
@@ -53,34 +53,34 @@ int clock_gettime(int option, struct timespec *pTS) {
 
     assert(NULL != pTS);
 
-    if (0 == pc_ticks_per_second) {
+    if (0 == pc_ticks_per_second.QuadPart) {
         LARGE_INTEGER win_time;
 
 
         // Get the frequency of the performance counter.
-        if (0 == QueryPerformanceFrequency((LARGE_INTEGER *) &pc_ticks_per_second)) {
+        if (0 == QueryPerformanceFrequency(&pc_ticks_per_second)) {
             goto fail;
         }
         // Get the current value of the performance counter.
-        if (0 == QueryPerformanceCounter((LARGE_INTEGER *) &startticks)) {
+        if (0 == QueryPerformanceCounter(&pc_start_ticks)) {
             goto fail;
         }
 
         // Get the starting time in timespec format.
         GetSystemTimeAsFileTime((FILETIME *) &win_time);
-        win_time -= 116444736000000000ULL;                // Convert epoch 1601-01-01 to 1970-01-01.
-        ts_start->tv_sec = (win_time / 10000000UL);       // Convert 100 ns to seconds.
-        ts_start->tv_nsec = win_time % 10000000UL * 100;  // Convert remaining 100 ns to ns.
-        ticks2nano = 1000000000.0 / pc_ticks_per_second;
+        win_time.QuadPart -= 116444736000000000ULL;                // Convert epoch 1601-01-01 to 1970-01-01.
+        ts_start.tv_sec = (time_t) (win_time.QuadPart / 10000000UL);       // Convert 100 ns to seconds.
+        ts_start.tv_nsec = (long) (win_time.QuadPart % 10000000UL * 100);  // Convert remaining 100 ns to ns.
+        ticks2nano = 1000000000.0 / pc_ticks_per_second.QuadPart;
     }
 
     // Get the current value of the performance counter.
     if (0 == QueryPerformanceCounter((LARGE_INTEGER *) &pc_current_ticks)) {
         goto fail;
     }
-    pc_delta_ticks = pc_current_ticks - pc_start_ticks;
-    pTS->tv_sec = ts_start.tv_sec + (pc_delta_ticks / pc_ticks_per_second);
-    pTS->tv_nsec = (long) (ts_start.tv_nsec + (double)(pc_delta_ticks % pc_ticks_per_second) * ticks2nano);
+    pc_delta_ticks.QuadPart = pc_current_ticks.QuadPart - pc_start_ticks.QuadPart;
+    pTS->tv_sec = ts_start.tv_sec + (pc_delta_ticks.QuadPart / pc_ticks_per_second.QuadPart);
+    pTS->tv_nsec = (long) (ts_start.tv_nsec + (double)(pc_delta_ticks.QuadPart % pc_ticks_per_second.QuadPart) * ticks2nano);
 
     if (pTS->tv_nsec >= 1000000000UL) {
         // Adjust for nanosecond overflow.

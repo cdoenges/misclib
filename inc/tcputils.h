@@ -146,7 +146,7 @@ extern bool tcp_set_socket_nonblocking(int theSocket);
     @retval true The socket is blocking.
     @retval false Changing the socket to blocking failed.
  */
-extern bool tcp_set_socket_blocking(int theSocket); 
+extern bool tcp_set_socket_blocking(int theSocket);
 
 
 
@@ -266,7 +266,7 @@ extern int tcp_server(int port, serverfunction pServerFunction, bool multiThread
    must be set.
    @param pTimeout The timeout for any connection. The server will be shut down
    if no activity occurs for the timeout amount of time. Set to NULL to wait
-   indefinitely. 
+   indefinitely.
    @return Did an error occur?
    @retval 0 No error occurred.
    @retval &lt;0 An error occurred. Consult errno for details.

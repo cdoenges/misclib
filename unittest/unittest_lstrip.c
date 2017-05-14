@@ -32,7 +32,7 @@
 
 
 
-static const unsigned NUMBER_OF_TEST_VECTORS = 10;
+#define NUMBER_OF_TEST_VECTORS 10
 static char *testvector[NUMBER_OF_TEST_VECTORS] = {
     "NOWHITESPACE",
     "SPACEATEND ",

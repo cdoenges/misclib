@@ -67,7 +67,7 @@ uint64_t prng_xorshift1024star_next(void) {
 
 
 /** Equivalent to calling prng_xorshift1024star_next() 2^512 times. */
-void prng_xorshift1024star_jump() {
+void prng_xorshift1024star_jump(void) {
 	static const uint64_t JUMP[] = {
 		0x84242f96eca9c41dULL, 0xa3c65b8776f96855ULL, 0x5b34a39f070b5837ULL,
 		0x4489affce4f31a1eULL, 0x2ffeeb0a48316f40ULL, 0xdc2d9891fe68c022ULL,

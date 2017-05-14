@@ -164,7 +164,7 @@ typedef kv_object_t *kv_iterator_t;
    @return The first object in the collection or NULL if the collection is empty.
  */
 MISCLIB_EXTERN kv_object_t *kv_initializeIterator(kv_iterator_t *pIterator,
-                                   kv_collection_t const *pCollection);
+                                                  kv_collection_t const *pCollection);
 
 
 

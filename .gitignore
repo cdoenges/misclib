@@ -10,6 +10,7 @@ tags
 unittest/misclibTest
 
 # VisualStudio
+.vs
 Debug
 Generated Files
 ipch
