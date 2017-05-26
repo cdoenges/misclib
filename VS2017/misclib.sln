@@ -16,12 +16,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misclibLIB", "misclibLIB\mi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misclibDLL", "misclibDLL\misclibDLL.vcxproj", "{F06674B3-BA57-4300-83CB-CFA85CFD253F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misclibTestDLL", "misclibTestDLL\misclibTestDLL.vcxproj", "{AD398000-AF3B-49D0-A04B-135D70228BA6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F06674B3-BA57-4300-83CB-CFA85CFD253F} = {F06674B3-BA57-4300-83CB-CFA85CFD253F}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		misclib.shared\misclib.shared.vcxitems*{0192f264-072e-4acb-ad4a-d054d5d98222}*SharedItemsImports = 9
 		misclibTest.shared\misclibTest.shared.vcxitems*{2a329c81-8765-417c-8abf-e5dccd175cb4}*SharedItemsImports = 9
 		misclib.shared\misclib.shared.vcxitems*{52018a51-3f07-49e7-a382-af700e59d6aa}*SharedItemsImports = 4
 		misclibTest.shared\misclibTest.shared.vcxitems*{90386fd1-e523-43c2-ac87-80c4bb9da32a}*SharedItemsImports = 4
+		misclibTest.shared\misclibTest.shared.vcxitems*{ad398000-af3b-49d0-a04b-135d70228ba6}*SharedItemsImports = 4
 		misclib.shared\misclib.shared.vcxitems*{f06674b3-ba57-4300-83cb-cfa85cfd253f}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +69,16 @@ Global
 		{F06674B3-BA57-4300-83CB-CFA85CFD253F}.Release|Win32.Build.0 = Release|Win32
 		{F06674B3-BA57-4300-83CB-CFA85CFD253F}.Release|x64.ActiveCfg = Release|x64
 		{F06674B3-BA57-4300-83CB-CFA85CFD253F}.Release|x64.Build.0 = Release|x64
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Debug|ARM.ActiveCfg = Debug|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Debug|Win32.Build.0 = Debug|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Debug|x64.ActiveCfg = Debug|x64
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Debug|x64.Build.0 = Debug|x64
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Release|ARM.ActiveCfg = Release|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Release|Win32.ActiveCfg = Release|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Release|Win32.Build.0 = Release|Win32
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Release|x64.ActiveCfg = Release|x64
+		{AD398000-AF3B-49D0-A04B-135D70228BA6}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

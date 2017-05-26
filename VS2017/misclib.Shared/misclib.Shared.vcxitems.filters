@@ -1,55 +1,60 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\alignment.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\targetver.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\base64.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\alignment.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\begetset.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\base64.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\c99.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\begetset.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\factorial.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\c99.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\hex.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\factorial.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\itoa.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\hex.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\keyvalue.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\itoa.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\legetset.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\keyvalue.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\logging.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\legetset.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\portable_timer.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\logging.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\prng.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\portable_timer.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\ringbuffer.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\prng.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\static_assert.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\ringbuffer.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\tcputils.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\static_assert.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\xtryxcatch.h">
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\stringfunctions.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\tcputils.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\inc\xtryxcatch.h">
+      <Filter>inc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\base64.c">
@@ -122,6 +127,5 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\..\README.md">
       <Filter>doc</Filter>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)misclib.def" />
   </ItemGroup>
 </Project>

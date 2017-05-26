@@ -1,6 +1,6 @@
 EXPORTS
 ; Data
-g_xorshift64star	DATA
+g_xorshift64star    DATA
 g_xorshift1024star	DATA
 MAX_FACTORIAL_INPUT	DATA
 ; Public APIs
@@ -21,9 +21,9 @@ int4ToHex
 int8ToHex
 intoa
 itoa
-legetset
 leGetUint16
 leGetUint32
+leSetUint16
 leSetUint32
 log_closeLogfile
 log_logData
@@ -40,10 +40,12 @@ log_setFileLevel
 log_setStderrLevel
 log_setStdoutLevel
 log_setStdoutSupression
+lstrip
 ringbuffer_get
 ringbuffer_init
 ringbuffer_peek
 ringbuffer_put
+rstrip
 tcp_client_connect
 tcp_close
 tcp_init
@@ -51,7 +53,6 @@ tcp_receive
 tcp_send
 tcp_send_and_receive
 tcp_server
-tcp_server_connect
 tcp_server_multiport
 tcp_set_socket_blocking
 tcp_set_socket_nonblocking
