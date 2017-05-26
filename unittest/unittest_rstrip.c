@@ -69,8 +69,9 @@ bool unittest_rstrip(void) {
     log_logMessage(LOGLEVEL_INFO, "Testing rstrip()");
     for (i = 0;i < NUMBER_OF_TEST_VECTORS;i ++) {
         strncpy(testbuffer, testvector[i], sizeof(testbuffer));
+        log_logData(LOGLEVEL_DEBUG, testbuffer, sizeof(testbuffer), "testbuff", 16);
         l = rstrip(testbuffer);
-//        printf("Test #%d: %d - '%s'\n", i, l, testbuffer);
+        log_logMessage(LOGLEVEL_DEBUG, "Test #%d: %d - '%s'\n", i, l, testbuffer);
         if (strlen(expected[i]) != l) {
             log_logMessage(LOGLEVEL_ERROR,
                     "rstrip() returned %u, expected %u.",

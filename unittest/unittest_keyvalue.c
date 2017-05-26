@@ -158,7 +158,7 @@ static bool unittest_keyvalue_performance_write(void) {
 
     log_logMessage(LOGLEVEL_INFO, "Starting kv_insertInt() timing ...");
     startclock = clock();
-    for (i = 0; i < 100000; i++) {
+    for (i = 0; i < 10000; i++) {
         char keyString[32];
 
         sprintf(keyString, "something@%08x", i);

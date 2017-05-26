@@ -26,9 +26,6 @@
  */
 #include <stdbool.h>
 #include <stdio.h>
-#ifdef _WIN32
-#include "stdafx.h"
-#endif
 #include "logging.h"
 #include "misclibTest.h"
 
