@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{2a329c81-8765-417c-8abf-e5dccd175cb4}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\misclibTest.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_factorial.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_keyvalue.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_lstrip.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_prng.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_ringbuffer.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_rstrip.c" />
+  </ItemGroup>
+</Project>

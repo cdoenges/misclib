@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\alignment.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\base64.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\begetset.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\c99.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\factorial.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\hex.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\itoa.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\keyvalue.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\legetset.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\logging.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\portable_timer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\prng.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\ringbuffer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\static_assert.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\tcputils.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\inc\xtryxcatch.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\base64.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\begetset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\factorial.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\ffactorial.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\hex.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\itoa.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\keyvalue.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\legetset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\logging.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\lstrip.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\portable_timer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\ringbuffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\rstrip.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\tcputils.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\winsix_clock_gettime.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\winsix_nanosleep.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\xorshift64star.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="\\vmware-host\Shared Folders\misclib\VS2017\misclib.shared\..\..\src\xorshift1024star.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="doc">
+      <UniqueIdentifier>{389a47a1-2f1d-4ffc-852a-876dde2e8b26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{d13f6ee8-9b9b-445e-a965-9f9b06d105d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{f18eea55-3089-466b-9503-60bc2c301058}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\README.md">
+      <Filter>doc</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)misclib.def" />
+  </ItemGroup>
+</Project>

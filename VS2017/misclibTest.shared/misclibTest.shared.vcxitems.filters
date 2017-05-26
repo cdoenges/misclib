@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{559db89b-ff29-4c67-8b44-b1cd59998ae7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\unittest">
+      <UniqueIdentifier>{57a80a8a-1ae5-4f1b-80e6-637c7a44dc30}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\misclibTest.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_factorial.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_keyvalue.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_lstrip.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_prng.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_ringbuffer.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\unittest\unittest_rstrip.c" />
+  </ItemGroup>
+</Project>
