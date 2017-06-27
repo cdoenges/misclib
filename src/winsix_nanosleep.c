@@ -37,6 +37,7 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
     HANDLE timer;
     int64_t ns100;
     LARGE_INTEGER li;
+    DWORD rv;
 
 
     // Create a timer.
@@ -65,8 +66,34 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
     }
 
     // Start the timer and wait for it to complete.
-    WaitForSingleObject(timer,      // the timer
-                        INFINITE);  // wait until timer is done
+    rv = WaitForSingleObject(timer,      // the timer
+                             INFINITE);  // wait until timer is done
+    switch (rv) {
+        case WAIT_OBJECT_0:
+            // All is well.
+            errno = 0;
+            break;
+
+        case WAIT_ABANDONED:
+            // POSIX requires us to return the remaining time in rmtp,
+            // but I do not see a way to get the remaining time using a
+            // Windows API.
+            errno = EINTR;
+            break;
+
+        case WAIT_TIMEOUT:
+            // This should never occurr: the timer did not finish but the
+            // INFINITE waiting time has elapsed.
+            //-fallthrough
+        default:
+            // A generic error occurred.
+            // Use Windows API function GetLastError() to get more information.
+            // Since there is no way to use this in a POSIX-compliant way,
+            // ignore the details.
+            errno = ENOSYS;
+            break;
+    } // switch rv
+
     // Clean up.
     CloseHandle(timer);
 
