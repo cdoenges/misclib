@@ -16,8 +16,8 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
-    reserved.
+    Copyright (c) 2010-2015, 2018, Christian Doenges (Christian D&ouml;nges)
+    All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are
@@ -147,8 +147,10 @@ uint_fast32_t hexToInt32(char const *pSrc) {
 } // hexToInt32()
 
 
+
 size_t hexbuf2StringLength(size_t nrBytes,
-    bool useCRLF, bool showASCII, unsigned lineWidth) {
+                           bool useCRLF, bool showASCII, unsigned lineWidth,
+                           bool showOffset) {
     size_t nrOfLines, bytesPerLine, totalBytes;
 
     assert(lineWidth > 0);
@@ -157,19 +159,21 @@ size_t hexbuf2StringLength(size_t nrBytes,
         return 0;
     }
 
-    nrOfLines = nrBytes / lineWidth + 1;
+    // Each line displays up to lineWidth bytes.
+    nrOfLines = (nrBytes + lineWidth - 1) / lineWidth;  // ceil(nrBytes / lineWidth)
 
-	if ((1 == nrOfLines) && !showASCII) {
-		bytesPerLine = 8 + 1 + 3 * nrOfLines + (useCRLF ? 2 : 1);
-	} else {
-		bytesPerLine = 8 + 1 + 3 * (size_t) lineWidth
-			+ (showASCII ? (size_t) lineWidth : 0)
-			+ (useCRLF ? 2 : 1);
-	}
+    // Displaying the line requires room for the (optional) offset,
+    // the bytes, the (option) decoded ASCII, and the EOL terminator.
+    bytesPerLine = (showOffset ? 8 : 0) + 3 * (size_t) lineWidth
+        + (showASCII ? (size_t) lineWidth + 1 : 0)
+        + (useCRLF ? 2 : 1);
+
+    // The entire string is terminated with a NUL byte.
     totalBytes = bytesPerLine * nrOfLines + 1;
 
     return totalBytes;
 } // hexbuf2StringLength()
+
 
 
 #ifdef ENOMEM
@@ -194,18 +198,18 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
     // Make sure the output buffer can be used.
     requiredStringBufferSize = hexbuf2StringLength(nrBytes,
-        useCRLF, showASCII, lineWidth);
+        useCRLF, showASCII, lineWidth, showOffset);
 
     if (NULL == pStringBuffer) {
         // No output buffer was specified, so create it.
-        if ((pStringBuffer = malloc(requiredStringBufferSize)) == NULL) {
+        if ((pStringBuffer = (char *) malloc(requiredStringBufferSize)) == NULL) {
             errno = ENOMEM;
             return NULL;
         }
     } else {
         // Check if the specified output buffer is large enough.
         if (stringBufferSize < requiredStringBufferSize) {
-            errno = ENOMEM;
+            errno = ERANGE;
             return NULL;
         }
     }
@@ -231,7 +235,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
             pStringBuffer += 8;
         }
 
-        // Dump as hex touples.
+        // Dump as hex tuples.
         for (offsetInLine = 0, pCurrentValue = (unsigned char const *) pValueBuffer;
              offsetInLine < lineWidth;
              offsetInLine++, pCurrentValue ++) {
@@ -246,7 +250,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
             // Dump ASCII representation.
             *pStringBuffer++ = ' ';
             while (paddingChars-- > 0) {
-                // If this is the last line, padd the missing values to
+                // If this is the last line, pad the missing values to
                 // achieve nice alignment of the ASCII representation.
                 *pStringBuffer++ = ' ';
             }
@@ -286,6 +290,7 @@ char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 int main(int argc, char *argv[]) {
@@ -431,29 +436,31 @@ int main(int argc, char *argv[]) {
         hex08Array[i] = (char) i;
     } // for i
 
-    requiredStringBufferSize = hexbuf2StringLength(0, false, true, 8);
+    requiredStringBufferSize = hexbuf2StringLength(0, false, true, 8, false);
     if (0 != requiredStringBufferSize) {
         printf("hexbuf2StringLength() case 1 FAILED.\n");
         exit(1);
     }
-    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 8);
+    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 8, true);
     if (requiredStringBufferSize != (117/8 + 1) * (8 + 1 + 4*8 + 1) + 1) {
         printf("hexbuf2StringLength() case 2 FAILED.\n");
         exit(1);
     }
-    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 16);
+    requiredStringBufferSize = hexbuf2StringLength(117, false, true, 16, true);
     if (requiredStringBufferSize != (117/16 + 1) * (8 + 1 + 4*16 + 1) + 1) {
         printf("hexbuf2StringLength() case 3 FAILED.\n");
         exit(1);
     }
-    requiredStringBufferSize = hexbuf2StringLength(117, false, false, 11);
-    if (requiredStringBufferSize != (117/11 + 1) * (8 + 1 + 3*11 + 1) + 1) {
+    requiredStringBufferSize = hexbuf2StringLength(117, false, false, 11, false);
+    if (requiredStringBufferSize != (117/11 + 1) * (3*11 + 1) + 1) {
         printf("hexbuf2StringLength() case 4 FAILED.\n");
         exit(1);
     }
-    requiredStringBufferSize = hexbuf2StringLength(117, true, true, 9);
-    if (requiredStringBufferSize != (117/9 + 1) * (8 + 1 + 4*9 + 2) + 1) {
-        printf("hexbuf2StringLength() case 5 FAILED.\n");
+    requiredStringBufferSize = hexbuf2StringLength(117, true, true, 9, true);
+    const unsigned EXP_H2SL_CASE5 = ((117 + 9 - 1) / 9) * (8 + 3*9 + 9 + 1 + 2) + 1;
+    if (requiredStringBufferSize != EXP_H2SL_CASE5) {
+        printf("hexbuf2StringLength() case 5 FAILED: expected %u got %u\n",
+               EXP_H2SL_CASE5, (unsigned) requiredStringBufferSize);
         exit(1);
     }
     printf("hexbuf2StringLength() PASSED.\n");
@@ -484,7 +491,7 @@ int main(int argc, char *argv[]) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
     }
-    printf(pStringBuffer);
+    printf("%s", pStringBuffer);
     free(pStringBuffer);
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 25,
                                   NULL, sizeof(hex16Array),
@@ -494,7 +501,7 @@ int main(int argc, char *argv[]) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
     }
-    printf(pStringBuffer);
+    printf("%s", pStringBuffer);
     free(pStringBuffer);
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 37,
                                   NULL, sizeof(hex16Array),
@@ -504,7 +511,7 @@ int main(int argc, char *argv[]) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
     }
-    printf(pStringBuffer);
+    printf("%s", pStringBuffer);
     free(pStringBuffer);
     pStringBuffer = hexbuf2String(hex08Array + 0x19, 37,
                                   NULL, sizeof(hex16Array),
@@ -514,7 +521,7 @@ int main(int argc, char *argv[]) {
         printf("hexbuf2String() with no buffer FAILED: %s\n", strerror(errno));
         exit(1);
     }
-    printf(pStringBuffer);
+    printf("%s", pStringBuffer);
     free(pStringBuffer);
 
     printf("hexbuf2String() PASSED.\n");

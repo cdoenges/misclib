@@ -16,8 +16,8 @@
     <http://opensource.org/licenses/bsd-license.php>:
 
 
-    Copyright (c) 2010-2015, Christian Doenges (Christian D&ouml;nges) All rights
-    reserved.
+    Copyright (c) 2010-2015, 2018, Christian Doenges (Christian D&ouml;nges)
+    All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are
@@ -53,6 +53,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+    extern "C" {
+#endif /* __cplusplus */
 
 // Suppress warnings about these symbols not being used.
 //lint -esym(714, hexToInt4, hexToInt8, hexToInt16, hexToInt32, int4ToHex, int8ToHex, int16ToHex, int32ToHex, hexbuf2String)
@@ -156,10 +160,13 @@ extern uint_fast32_t hexToInt32(char const *pSrc);
        be shown.
    @param lineWidth The number of bytes to dump in each line. The values
        8, 16, and 32 are customary, but any value is allowed.
+   @param showOffset If true, the offset (= address) will be prepended to the
+      data.
    @return The size of the buffer required for the dump.
   */
 extern size_t hexbuf2StringLength(size_t nrBytes,
-     bool useCRLF, bool showASCII, unsigned lineWidth);
+        bool useCRLF, bool showASCII, unsigned lineWidth,
+        bool showOffset);
 
 
 
@@ -173,9 +180,9 @@ extern size_t hexbuf2StringLength(size_t nrBytes,
    is terminated with a CR or CR+LF, depending on the useCRLF parameter.
 
    Each line requires
-   8 + 1 + 3*lineWidth + (showASCII ? lineWidth : 0) + (useCRLF ? 2 : 1)
+   (showOffset ? 8 : 0) + 3*lineWidth + (showASCII ? lineWidth + 1 : 0) + (useCRLF ? 2 : 1)
    bytes of memory. There are
-   int(nrBytes / lineWidth) + 1
+   int(nrBytes + lineWidth - 1) / lineWidth)
    lines. A C string is always zero-terminated, so an additional byte is
    required.
 
@@ -215,4 +222,9 @@ extern char *hexbuf2String(char const *pValueBuffer, size_t nrBytes,
                            char *pStringBuffer, size_t stringBufferSize,
                            bool useCRLF, bool useASCII, unsigned lineWidth,
                            bool showOffset, size_t initialOffset);
+
+#ifdef __cplusplus
+    }
+#endif /* __cplusplus */
+
 #endif // HEX_H
