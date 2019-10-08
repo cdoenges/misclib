@@ -51,6 +51,8 @@ void testFail(char *description) {
 
 
 int main(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
 
     log_setStdoutLevel(LOGLEVEL_INFO);
 
